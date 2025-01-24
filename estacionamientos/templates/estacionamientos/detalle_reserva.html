@@ -14,7 +14,7 @@
   <div class="alert alert-info" role="alert">
     ¡Tu reserva está pendiente de pago!
   </div>
-  <a href="{% url 'procesar_pago' reserva.id %}" class="btn btn-success">Pagar</a>
+  <a href="{ u%rl 'procesar_pago' reserva.id %}" class="btn btn-success">Pagar</a>
 {% endif %}
 
 {% if reserva.estado == 'Finalizada' %}

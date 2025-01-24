@@ -11,41 +11,61 @@ Vistas para la app 'estacionamientos':
 - calificar_reserva: Permite calificar al dueño o al cliente tras finalizar la reserva (estado='Finalizada').
 """
 
-
+from django.urls import reverse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from .models import Estacionamiento, Reserva
 from .forms import EstacionamientoForm, ReservaForm, CalificacionForm
 from .decorators import solo_duenos, solo_clientes
+import json
 
 @login_required
 @solo_clientes
 def listar_estacionamientos(request):
-    estacionamientos = list(Estacionamiento.objects.all().values('ubicacion', 'coordenadas', 'disponibilidad'))
-    return render(request, 'estacionamientos/listar_estacionamientos.html', {
-        'estacionamientos': estacionamientos,
-        'google_maps_api_key': 'settings.   GOOGLE_MAPS_API_KEY'
+    estacionamientos_list = []
+    # Recorremos todos los estacionamientos (o podrías filtrar directamente en la query)
+    for est in Estacionamiento.objects.all():
+        # EJEMPLO DE CONDICIÓN:
+        # Solo añadimos los estacionamientos que estén disponibles
+        if est.disponibilidad:
+            estacionamientos_list.append({
+                "id": est.id,
+                "ubicacion": est.ubicacion,
+                "coordenadas": est.coordenadas,
+                "detalle_url": reverse("detalle_estacionamiento", args=[est.id])
+            })
+    
+    # Al final, retornamos el render con los que cumplieron la condición
+    return render(request, "estacionamientos/listar_estacionamientos.html", {
+        "estacionamientos_json": json.dumps(estacionamientos_list),
+        "google_maps_key": settings.GOOGLE_MAPS_API_KEY,
     })
 
-@solo_duenos
+    
 @login_required
+@solo_duenos
 def crear_estacionamiento(request):
-    """
-    Crea un estacionamiento asociado al usuario actual (asumiendo que es dueño).
-    """
     if request.method == 'POST':
         form = EstacionamientoForm(request.POST)
         if form.is_valid():
             estacionamiento = form.save(commit=False)
             estacionamiento.owner = request.user
+
+            # Tomar "coordenadas" de request.POST
+            coords = request.POST.get("coordenadas")
+            if coords:
+                estacionamiento.coordenadas = coords
+
             estacionamiento.save()
             return redirect('listar_estacionamientos')
     else:
         form = EstacionamientoForm()
     return render(request, 'estacionamientos/crear_estacionamiento.html', {
-        'form': form
+        'form': form,
+        'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
     })
+
 
 @login_required
 def detalle_estacionamiento(request, pk):

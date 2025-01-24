@@ -1,48 +1,144 @@
-<!-- templates/estacionamientos/listar_estacionamientos.html -->
-
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-<h2>Estacionamientos por tu zona</h2>
+<h2>Buscar Estacionamientos Cercanos</h2>
 
-<!-- Aquí tu lista textual, si quieres -->
-<ul>
-  {% for e in estacionamientos %}
-    <li>
-      {{ e.ubicacion }} (coords: {{ e.coordenadas }})
-      {% if e.disponibilidad %}(Disponible){% endif %}
-    </li>
-  {% endfor %}
-</ul>
+<div id="map" style="height: 400px; margin-bottom:1rem;"></div>
 
-<!-- Contenedor del mapa -->
-<div id="map" style="height: 400px;"></div>
+<div id="info" class="mb-3">
+  <p>Buscando tu ubicación...</p>
+</div>
 
-<script>
-  function initMap() {
-    const center = { lat: -33.4489, lng: -70.6693 };
-    const map = new google.maps.Map(document.getElementById("map"), {
-      zoom: 11,
-      center: center
-    });
+<div id="listaCercanos" class="row g-3"></div>
 
-    // Bucle de Django en el template (cuando se renderiza, se expandirá)
-    {% for e in estacionamientos %}
-      const coords = "{{ e.coordenadas }}".split(",");
-      const lat = parseFloat(coords[0]);
-      const lng = parseFloat(coords[1]);
+
+
+  <script>
+function initMap() {
+  let mapCenter = { lat: -33.44, lng: -70.66 };
+  let map = new google.maps.Map(document.getElementById("map"), {
+    center: mapCenter,
+    zoom: 12
+  });
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      let userLat = pos.coords.latitude;
+      let userLng = pos.coords.longitude;
+
+      // Centrar el mapa
+      map.setCenter({ lat: userLat, lng: userLng });
       new google.maps.Marker({
-        position: {lat: lat, lng: lng},
+        position: { lat: userLat, lng: userLng },
         map: map,
-        title: "{{ e.ubicacion }}"
+        title: "Tu Ubicación"
       });
-    {% endfor %}
+
+      // AHORA hacemos el “forEach(e => ...)” que usa userLat,userLng
+      let cercanos = [];
+      estacionamientos.forEach(e => {
+        if (e.coordenadas) {
+          let parts = e.coordenadas.split(",");
+          let lat = parseFloat(parts[0]);
+          let lng = parseFloat(parts[1]);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            let d = distanciaEnKm(userLat, userLng, lat, lng);
+            if (d < 10) {
+              // Marcador
+              let marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: map,
+                title: e.ubicacion
+              });
+              // Click => detalle
+              marker.addListener("click", () => {
+                window.location.href = e.detalle_url;
+              });
+              // Insertar en “cercanos”
+              e.distancia = d;
+              cercanos.push(e);
+            }
+          }
+        }
+      });
+
+      // Ordenar y mostrar la lista
+      cercanos.sort((a,b) => a.distancia - b.distancia);
+      renderCercanos(cercanos);
+
+    }, (error) => {
+      console.error(error);
+      // Si no se pudo geolocalizar, igual “forEach”, pero userLat,userLng=null => no filtras
+      dibujarSinUbicacion(map);
+    });
+  } else {
+    // Sin geolocalización
+    dibujarSinUbicacion(map);
   }
+}
+
+function distanciaEnKm(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+
+const estacionamientos = JSON.parse('{{ estacionamientos_json|safe }}');
+
+function dibujarSinUbicacion(map) {
+  // Quizá muestres todos sin filtrar, o nada.
+  let cercanos = [];
+  estacionamientos.forEach(e => {
+    // Sin user coords => no filtras, 
+    // o lo que quieras.  
+    // Ej: creas markers para todos
+    if (e.coordenadas) {
+      let parts = e.coordenadas.split(",");
+      let lat = parseFloat(parts[0]);
+      let lng = parseFloat(parts[1]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        let marker = new google.maps.Marker({
+          position: { lat, lng },
+          map: map,
+          title: e.ubicacion
+        });
+      }
+    }
+  });
+}
+
+function renderCercanos(cercanos) {
+  const container = document.getElementById("listaCercanos");
+  container.innerHTML = "";
+  cercanos.forEach(e => {
+    let card = document.createElement("div");
+    card.className = "col-md-4";
+    card.innerHTML = `
+      <div class="card" style="cursor:pointer">
+        <div class="card-body">
+          <h5 class="card-title">${e.ubicacion}</h5>
+          <p class="card-text">Distancia: ${e.distancia.toFixed(2)} km</p>
+        </div>
+      </div>
+    `;
+    // Click => detalle
+    card.addEventListener("click", () => {
+      window.location.href = e.detalle_url;
+    });
+    container.appendChild(card);
+  });
+}
 </script>
 
 <script
-  src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&callback=initMap"
-  loading="async"
+  src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap"
+  async
   defer
 ></script>
 {% endblock %}

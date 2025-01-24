@@ -12,7 +12,7 @@ class Estacionamiento(models.Model):
         related_name='estacionamientos'
     )
     ubicacion = models.CharField(max_length=255)
-    coordenadas = models.CharField(max_length=255)
+    coordenadas = models.CharField(max_length=100, null=True, blank=True)
     tarifa = models.FloatField()
     disponibilidad = models.BooleanField(default=True)
     accesoRemoto = models.BooleanField(default=False)

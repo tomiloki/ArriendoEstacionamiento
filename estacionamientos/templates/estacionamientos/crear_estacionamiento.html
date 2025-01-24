@@ -1,9 +1,38 @@
-{% extends 'base.html' %}
+{% extends 'home_dueno.html' %}
+{% load static %}
+
 {% block content %}
 <h2>Crear Estacionamiento</h2>
-<form method="post" class="col-6">
+<!-- crear_estacionamiento.html -->
+<form method="POST">
   {% csrf_token %}
   {{ form.as_p }}
+  
+  <!-- Campo oculto para guardar "lat,lng" -->
+  <input type="hidden" name="coordenadas" id="id_coordenadas">
+
   <button type="submit" class="btn btn-success">Guardar</button>
 </form>
+
+<script>
+  function initAutocomplete() {
+    const input = document.getElementById("id_ubicacion");
+    const autocomplete = new google.maps.places.Autocomplete(input);
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        // Guardar en coordenadas "lat,lng"
+        document.getElementById("id_coordenadas").value = lat + "," + lng;
+      }
+    });
+  }
+</script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key={{GOOGLE_MAPS_API_KEY}}&libraries=places&callback=initAutocomplete"
+  async
+  defer
+></script>
 {% endblock %}

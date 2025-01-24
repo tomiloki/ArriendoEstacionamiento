@@ -12,7 +12,7 @@ from .models import Calificacion
 class EstacionamientoForm(forms.ModelForm):
     class Meta:
         model = Estacionamiento
-        fields = ['ubicacion', 'coordenadas', 'tarifa', 'accesoRemoto', 'tipo']
+        fields = ['ubicacion', 'tarifa', 'disponibilidad', 'accesoRemoto', 'tipo']
 
     def clean_tarifa(self):
         tarifa = self.cleaned_data.get('tarifa')

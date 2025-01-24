@@ -4,12 +4,14 @@
 <div class="text-center p-5">
   <h1>Bienvenido a Arriendo de Estacionamientos</h1>
   <p>Encuentra rápidamente un lugar para tu vehículo...</p>
-  <img src="{% static 'images/flyer.png' %}" class="img-fluid mb-3" alt="Flyer">
   <div>
     {% if user.rol == 'dueno' %}
       <a href="{% url 'crear_estacionamiento' %}" class="btn btn-success">Comenzar</a>
     {% elif user.rol == 'cliente' %}
       <a href="{% url 'listar_estacionamientos' %}" class="btn btn-success">Comenzar</a>
+    {% else %}
+      <a href="{% url 'login' %}" class="btn btn-success">Comenzar</a>
+      
     {% endif %} 
   </div>
 </div>

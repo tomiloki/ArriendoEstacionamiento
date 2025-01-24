@@ -42,17 +42,18 @@ class ReservaForm(forms.ModelForm):
         cleaned_data = super().clean()
         fecha_inicio = cleaned_data.get('fechaInicio')
         fecha_fin = cleaned_data.get('fechaFin')
-        estacionamiento = self.instance.estacionamiento  # Se completará en la vista
+        estacionamiento = getattr(self.instance, 'estacionamiento', None)
 
-        # 1) Verificar fechaFin > fechaInicio
+        if not estacionamiento:
+            raise forms.ValidationError("El estacionamiento no está asociado a esta reserva.")
+
+        # Verificar fechas
         if fecha_inicio and fecha_fin:
             if fecha_fin <= fecha_inicio:
                 raise forms.ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
-        # 2) Verificar solapamientos
-        # Buscamos reservas de ese estacionamiento que se crucen con el rango introducido
-        # con estado 'Pendiente' o 'Confirmada' (asumiendo Canceladas no afectan).
-        if fecha_inicio and fecha_fin and estacionamiento:
+        # Verificar solapamientos
+        if fecha_inicio and fecha_fin:
             overlapping = Reserva.objects.filter(
                 estacionamiento=estacionamiento,
                 estado__in=['Pendiente', 'Confirmada']
@@ -64,6 +65,7 @@ class ReservaForm(forms.ModelForm):
                 raise forms.ValidationError(
                     "Este estacionamiento ya está reservado en parte de ese rango horario."
                 )
+
         return cleaned_data
 
 class CalificacionForm(forms.ModelForm):

@@ -1,0 +1,48 @@
+{% extends 'home_dueno.html' %}
+{% block content %}
+<h2>Mis Reservas (Dueño)</h2>
+
+{% if reservas %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Estacionamiento</th>
+        <th>Cliente</th>
+        <th>Fecha Inicio</th>
+        <th>Fecha Fin</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reservas %}
+      <tr>
+        <td>
+          <!-- "Clickeable" para ver detalle -->
+          <a href="{% url 'detalle_reserva' pk=r.id %}">
+            {{ r.id }}
+          </a>
+        </td>
+        <td>{{ r.estacionamiento.ubicacion }}</td>
+        <td>{{ r.cliente.username }}</td>
+        <td>{{ r.fechaInicio }}</td>
+        <td>{{ r.fechaFin }}</td>
+        <td>{{ r.estado }}</td>
+        <td>
+          {% if r.estado != 'Finalizada' %}
+            <a href="{% url 'finalizar_reserva' pk=r.id %}" class="btn btn-warning btn-sm">
+              Finalizar
+            </a>
+          {% else %}
+            <span class="text-muted">Ya finalizada</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No hay reservas en tus estacionamientos.</p>
+{% endif %}
+{% endblock %}

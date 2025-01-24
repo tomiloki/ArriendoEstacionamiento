@@ -1,20 +1,31 @@
 # estacionamientos/views.py
+"""
+Vistas para la app 'estacionamientos':
+
+- listar_estacionamientos: Lista todos los estacionamientos (solo si rol='cliente' o rol='consultor').
+- crear_estacionamiento: Creación de nuevos estacionamientos (solo rol='dueno').
+- detalle_estacionamiento: Muestra detalles y permite habilitar/deshabilitar un estacionamiento (dueño).
+- crear_reserva: Reserva un estacionamiento (solo rol='cliente'), validando fechas y solapamientos.
+- detalle_reserva: Muestra el estado de la reserva, permitir pagos o calificaciones si aplica.
+- reporte_transacciones: Genera reporte de reservas ligadas a un dueño.
+- calificar_reserva: Permite calificar al dueño o al cliente tras finalizar la reserva (estado='Finalizada').
+"""
+
 
 from django.shortcuts import render, get_object_or_404, redirect
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from .models import Estacionamiento, Reserva
 from .forms import EstacionamientoForm, ReservaForm, CalificacionForm
-from .decorators import solo_duenos
-from .decorators import solo_clientes
+from .decorators import solo_duenos, solo_clientes
 
 @login_required
+@solo_clientes
 def listar_estacionamientos(request):
-    """
-    Lista todos los estacionamientos (podrías filtrar sólo disponibles, etc.).
-    """
-    estacionamientos = Estacionamiento.objects.all()
+    estacionamientos = list(Estacionamiento.objects.all().values('ubicacion', 'coordenadas', 'disponibilidad'))
     return render(request, 'estacionamientos/listar_estacionamientos.html', {
-        'estacionamientos': estacionamientos
+        'estacionamientos': estacionamientos,
+        'google_maps_api_key': 'settings.   GOOGLE_MAPS_API_KEY'
     })
 
 @solo_duenos
@@ -69,13 +80,24 @@ def crear_reserva(request, estacionamiento_id):
     if request.method == 'POST':
         form = ReservaForm(request.POST)
         # Asignar el estacionamiento al 'instance' para que lo use en clean()
-        reserva = form.instance
-        reserva.estacionamiento = estacionamiento
-        reserva.cliente = request.user
 
         if form.is_valid():
-            return redirect('detalle_reserva', pk=reserva.id)
+            # form.is_valid() = True => Django ya procesó los datos y están correctos
+            reserva = form.save(commit=False)
+            reserva.cliente = request.user
+            reserva.estacionamiento = estacionamiento
+            reserva.save()  # Aquí se guarda y ya tenemos reserva.id
+            
+            # Redirigimos con el pk real
+            return redirect('detalle_reserva', pk=reserva.pk)
+        else:
+            # Si el form no es válido, se vuelve a mostrar el template con errores
+            return render(request, 'estacionamientos/crear_reserva.html', {
+                'form': form,
+                'estacionamiento': estacionamiento
+            })
     else:
+        # GET: mostrar formulario vacío
         form = ReservaForm()
     return render(request, 'estacionamientos/crear_reserva.html', {
         'form': form,
@@ -112,7 +134,7 @@ def calificar_reserva(request, reserva_id):
     reserva = get_object_or_404(Reserva, id=reserva_id)
     
     # Validar estado
-    if reserva.estado != 'Confirmada':
+    if reserva.estado != 'Finalizada':
         # no se puede calificar todavía
         return redirect('detalle_reserva', pk=reserva_id)
 
@@ -162,3 +184,18 @@ def finalizar_reserva(request, pk):
 
     return redirect('detalle_reserva', pk=pk)
 
+
+@login_required
+@solo_duenos
+def mis_reservas(request):
+    """
+    Muestra todas las reservas que hay en los estacionamientos
+    cuyo dueño sea el usuario actual.
+    """
+    estacionamientos_propios = Estacionamiento.objects.filter(owner=request.user)
+    # Filtra todas las reservas asociadas a esos estacionamientos.
+    reservas = Reserva.objects.filter(estacionamiento__in=estacionamientos_propios)
+
+    return render(request, 'estacionamientos/mis_reservas.html', {
+        'reservas': reservas
+    })

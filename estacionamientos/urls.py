@@ -5,7 +5,7 @@ from .views import (
     listar_estacionamientos, crear_estacionamiento, detalle_estacionamiento,
     habilitar_estacionamiento, deshabilitar_estacionamiento,
     crear_reserva, detalle_reserva, reporte_transacciones,
-    calificar_reserva, finalizar_reserva
+    calificar_reserva, finalizar_reserva, mis_reservas
 )
 
 urlpatterns = [
@@ -19,5 +19,6 @@ urlpatterns = [
     path('reporte/', reporte_transacciones, name='reporte_transacciones'),
     path('reserva/calificar/<int:reserva_id>/', calificar_reserva, name='calificar_reserva'),
     path('reserva/finalizar/<int:pk>/', finalizar_reserva, name='finalizar_reserva'),
+    path('mis-reservas/', mis_reservas, name='mis_reservas'),
 
 ]

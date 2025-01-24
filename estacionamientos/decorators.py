@@ -8,7 +8,7 @@ def solo_duenos(function):
     def wrap(request, *args, **kwargs):
         if request.user.is_authenticated and request.user.rol == 'dueno':
             return function(request, *args, **kwargs)
-        return redirect('listar_estacionamientos')  # o mostrar error
+        return redirect('home')  # o mostrar error
     return wrap
 
 # estacionamientos/decorators.py
@@ -18,5 +18,5 @@ def solo_clientes(function):
     def wrap(request, *args, **kwargs):
         if request.user.is_authenticated and request.user.rol == 'cliente':
             return function(request, *args, **kwargs)
-        return redirect('listar_estacionamientos')
+        return redirect('home')
     return wrap

@@ -16,7 +16,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow">
       <div class="container">
         <a class="navbar-brand fs-3" href="{% url 'home' %}">
-          Sistema Arriendo
+          Mi Estacionamiento
         </a>
         <button 
           class="navbar-toggler" 
@@ -43,14 +43,17 @@
               {% elif user.rol == 'dueno' %}
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'crear_estacionamiento' %}">
-                    Nuevo Estacionamiento
+                    Agregar Estacionamiento
                   </a>
                 </li>
                 <li class="nav-item">
+                  <a class="nav-link" href="{% url 'mis_reservas' %}">Reservas</a>
+                </li>   
+                <li class="nav-item">
                   <a class="nav-link" href="{% url 'reporte_transacciones' %}">
-                    Mis Reportes
+                    Transacciones
                   </a>
-                </li>
+                </li>         
                 <!-- Otras opciones específicas del dueño -->
               {% elif user.rol == 'administrador' %}
                 <li class="nav-item">
@@ -70,7 +73,9 @@
             <!-- Botón de logout con POST -->
             <form method="post" action="{% url 'logout' %}">
               {% csrf_token %}
-              <button class="btn btn-link nav-link text-white" type="submit">Salir</button>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <button class="nav-link" type="submit">Cerrar Sesión</button>
+            </ul>
             </form>
             
           {% else %}

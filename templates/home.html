@@ -6,7 +6,11 @@
   <p>Encuentra rápidamente un lugar para tu vehículo...</p>
   <img src="{% static 'images/flyer.png' %}" class="img-fluid mb-3" alt="Flyer">
   <div>
-    <a href="{% url 'listar_estacionamientos' %}" class="btn btn-success btn-lg">Comenzar</a>
+    {% if user.rol == 'dueno' %}
+      <a href="{% url 'crear_estacionamiento' %}" class="btn btn-success">Comenzar</a>
+    {% elif user.rol == 'cliente' %}
+      <a href="{% url 'listar_estacionamientos' %}" class="btn btn-success">Comenzar</a>
+    {% endif %} 
   </div>
 </div>
 {% endblock %}

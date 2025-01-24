@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2>Bienvenido, Cliente</h2>
+    <p>Aquí puedes buscar y reservar estacionamientos.</p>
+    
+    <!-- Enlaces típicos de un cliente -->
+    <a href="{% url 'listar_estacionamientos' %}" class="btn btn-primary">Buscar Estacionamientos</a>
+    <!-- Podrías enlazar a "Ver mis reservas" si tuvieras esa vista, etc. -->
+  </div>
+</div>
+{% endblock %}

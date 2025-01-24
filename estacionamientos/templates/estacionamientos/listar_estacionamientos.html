@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Estacionamientos Disponibles</h2>
+
+<div class="mb-3">
+  <a href="{% url 'crear_estacionamiento' %}" class="btn btn-success">Nuevo Estacionamiento</a>
+</div>
+
+<div class="list-group">
+  {% for e in estacionamientos %}
+    <a href="{% url 'detalle_estacionamiento' e.id %}" class="list-group-item list-group-item-action">
+      <strong>{{ e.ubicacion }}</strong> &mdash; Tarifa: {{ e.tarifa }}  
+      <span class="float-end">
+        {% if e.disponibilidad %} 
+          <span class="badge bg-success">Disponible</span>
+        {% else %}
+          <span class="badge bg-danger">No Disponible</span>
+        {% endif %}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

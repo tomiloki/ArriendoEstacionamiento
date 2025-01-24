@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Calificar Reserva #{{ reserva.id }}</h2>
+<p>Estacionamiento: {{ reserva.estacionamiento.ubicacion }}</p>
+<p>Estado: {{ reserva.estado }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-success" type="submit">Enviar Calificación</button>
+</form>
+{% endblock %}

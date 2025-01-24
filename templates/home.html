@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="text-center p-5">
+  <h1>Bienvenido a Arriendo de Estacionamientos</h1>
+  <p>Encuentra rápidamente un lugar para tu vehículo...</p>
+  <img src="{% static 'images/flyer.png' %}" class="img-fluid mb-3" alt="Flyer">
+  <div>
+    <a href="{% url 'listar_estacionamientos' %}" class="btn btn-success btn-lg">Comenzar</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+<!-- En tu template crear_reserva.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<h2>Crear Reserva</h2>
+<form method="POST" class="row g-3">
+  {% csrf_token %}
+  <div class="col-md-6">
+    <label>Fecha de Inicio</label>
+    {{ form.fechaInicio }}
+  </div>
+  <div class="col-md-6">
+    <label>Fecha de Fin</label>
+    {{ form.fechaFin }}
+  </div>
+  <div class="col-12">
+    <button type="submit" class="btn btn-success">Reservar</button>
+  </div>
+</form>
+
+<!-- Scripts de Bootstrap Datepicker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/css/bootstrap-datepicker.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker@1.9.0/dist/js/bootstrap-datepicker.min.js"></script>
+<script>
+  // Suponiendo que form.fechaInicio y form.fechaFin son type="text" 
+  // y tienen IDs en Django: #id_fechaInicio, #id_fechaFin
+  $('#id_fechaInicio').datepicker({
+    format: 'yyyy-mm-dd',
+    autoclose: true
+  });
+  $('#id_fechaFin').datepicker({
+    format: 'yyyy-mm-dd',
+    autoclose: true
+  });
+</script>
+{% endblock %}

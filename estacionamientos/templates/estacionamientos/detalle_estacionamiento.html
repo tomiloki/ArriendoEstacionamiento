@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Detalle Estacionamiento #{{ estacionamiento.id }}</h2>
+<div class="card p-3 mb-3">
+  <p><strong>Ubicación:</strong> {{ estacionamiento.ubicacion }}</p>
+  <p><strong>Coordenadas:</strong> {{ estacionamiento.coordenadas }}</p>
+  <p><strong>Tarifa:</strong> {{ estacionamiento.tarifa }}</p>
+  <p>
+    <strong>Disponibilidad:</strong>
+    {% if estacionamiento.disponibilidad %}
+      <span class="badge bg-success">Habilitado</span>
+    {% else %}
+      <span class="badge bg-danger">Deshabilitado</span>
+    {% endif %}
+  </p>
+</div>
+
+<div class="mb-3">
+  {% if estacionamiento.disponibilidad %}
+    <a href="{% url 'deshabilitar_estacionamiento' estacionamiento.id %}" class="btn btn-warning">Deshabilitar</a>
+  {% else %}
+    <a href="{% url 'habilitar_estacionamiento' estacionamiento.id %}" class="btn btn-info">Habilitar</a>
+  {% endif %}
+  <a href="{% url 'crear_reserva' estacionamiento.id %}" class="btn btn-success">Crear Reserva</a>
+</div>
+
+<h3>Reservas registradas</h3>
+<ul class="list-group">
+  {% for reserva in estacionamiento.reservas.all %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      Reserva #{{ reserva.id }} 
+      <span>({{ reserva.estado }}) - Cliente: {{ reserva.cliente.username }}</span>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

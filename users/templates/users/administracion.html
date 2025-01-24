@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Administración de Usuarios</h2>
+<div class="table-responsive">
+  <table class="table table-bordered align-middle">
+    <thead class="table-success">
+      <tr>
+        <th>Usuario</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for usuario in usuarios %}
+      <tr>
+        <td>{{ usuario.username }}</td>
+        <td>{{ usuario.rol }}</td>
+        <td>
+          {% if usuario.is_active %}
+            <span class="badge text-bg-primary">Activo</span>
+          {% else %}
+            <span class="badge text-bg-secondary">Inactivo</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if usuario.is_active and usuario != request.user %}
+            <a href="{% url 'bloquear_usuario' usuario.id %}" class="btn btn-sm btn-danger">Bloquear</a>
+          {% else %}
+            ---
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

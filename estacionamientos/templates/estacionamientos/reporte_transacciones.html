@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reporte de Transacciones</h2>
+{% if reserves|length == 0 %}
+  <p class="text-muted">No hay reservas registradas</p>
+{% else %}
+<table class="table table-bordered table-hover">
+  <thead class="table-success">
+    <tr>
+      <th>Reserva #</th>
+      <th>Estacionamiento</th>
+      <th>Cliente</th>
+      <th>Estado</th>
+      <th>Costo</th>
+      <th>Pago</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for reserva in reservas %}
+    <tr>
+      <td>{{ reserva.id }}</td>
+      <td>{{ reserva.estacionamiento.ubicacion }}</td>
+      <td>{{ reserva.cliente.username }}</td>
+      <td>{{ reserva.estado }}</td>
+      <td>{{ reserva.calcularCosto }}</td>
+      <td>
+        {% if reserva.pago %}
+          <span class="badge text-bg-primary">{{ reserva.pago.estado }}</span>
+        {% else %}
+          <span class="badge text-bg-secondary">Sin pagar</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

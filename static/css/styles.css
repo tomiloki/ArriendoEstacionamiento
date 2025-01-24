@@ -1,0 +1,23 @@
+/* static/css/styles.css */
+
+/* Color de fondo general */
+body {
+    background-color: #f0fff0; /* un verde muy clarito (HoneyDew) */
+    color: #333; /* texto en gris oscuro */
+  }
+  
+  .navbar-custom {
+    background-color: #78c2ad !important; /* verde suave custom */
+  }
+  
+  /* Ejemplo de override de .btn-success a un verde distinto */
+  .btn-success {
+    background-color: #6ac19b !important;
+    border-color: #62ac8d !important;
+  }
+  
+  .btn-success:hover {
+    background-color: #5dae8a !important;
+    border-color: #539978 !important;
+  }
+  

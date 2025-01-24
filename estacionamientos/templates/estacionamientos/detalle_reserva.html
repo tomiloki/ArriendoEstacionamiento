@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Detalle de la Reserva #{{ reserva.id }}</h2>
+<div class="card p-3 mb-3">
+  <p><strong>Estacionamiento:</strong> {{ reserva.estacionamiento.ubicacion }}</p>
+  <p><strong>Cliente:</strong> {{ reserva.cliente.username }}</p>
+  <p><strong>Fecha Inicio:</strong> {{ reserva.fechaInicio }}</p>
+  <p><strong>Fecha Fin:</strong> {{ reserva.fechaFin }}</p>
+  <p><strong>Estado:</strong> {{ reserva.estado }}</p>
+  <p><strong>Costo Calculado:</strong> {{ reserva.calcularCosto }}</p>
+</div>
+
+{% if user == reserva.cliente and reserva.estado == 'Pendiente' %}
+  <div class="alert alert-info" role="alert">
+    ¡Tu reserva está pendiente de pago!
+  </div>
+  <a href="{% url 'procesar_pago' reserva.id %}" class="btn btn-success">Pagar</a>
+{% endif %}
+
+{% if reserva.estado == 'Finalizada' %}
+  <a href="{% url 'calificar_reserva' reserva.id %}" class="btn btn-info">
+    Calificar
+  </a>
+{% endif %}
+
+
+{% endblock %}

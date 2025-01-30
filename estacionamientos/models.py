@@ -18,6 +18,14 @@ class Estacionamiento(models.Model):
     accesoRemoto = models.BooleanField(default=False)
     tipo = models.CharField(max_length=50, blank=True, null=True)
 
+    def tiene_reservas_activas(self):
+        return self.reservas.filter(estado__in=['Pendiente', 'Confirmada']).exists()
+
+    def delete(self, *args, **kwargs):
+        if self.tiene_reservas_activas():
+            raise ValidationError("No puedes eliminar un estacionamiento con reservas activas.")
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"Estacionamiento #{self.id} - Dueño: {self.owner.username}"
 
@@ -45,6 +53,9 @@ class Reserva(models.Model):
     tiempoExpiracion = models.IntegerField(default=0)
     estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='Pendiente')
 
+    def __str__(self):
+        return f"Reserva de {self.cliente.username} en {self.estacionamiento.ubicacion}"
+    
     def calcularCosto(self) -> float:
         duracion_horas = (self.fechaFin - self.fechaInicio).total_seconds() / 3600
         return round(duracion_horas * self.estacionamiento.tarifa, 2)

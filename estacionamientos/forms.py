@@ -16,19 +16,17 @@ class EstacionamientoForm(forms.ModelForm):
 
     def clean_tarifa(self):
         tarifa = self.cleaned_data.get('tarifa')
-        if tarifa is not None and tarifa < 0:
-            raise forms.ValidationError("La tarifa no puede ser negativa.")
+        if tarifa is not None and tarifa <= 0:
+            raise forms.ValidationError("La tarifa debe ser mayor a 0.")
         return tarifa
-    
+
     def clean_coordenadas(self):
         coords = self.cleaned_data.get('coordenadas')
-        # Ejemplo: esperamos algo tipo "LAT,LON" (solo números, punto, coma, espacios)
-        # Este regex es muy simplificado, tú lo ajustas a tu realidad
         pattern = r'^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$'
         if coords and not re.match(pattern, coords.strip()):
             raise forms.ValidationError("Formato de coordenadas inválido (use lat,lon).")
         return coords.strip()
-
+    
 class ReservaForm(forms.ModelForm):
     class Meta:
         model = Reserva
@@ -47,24 +45,27 @@ class ReservaForm(forms.ModelForm):
         if not estacionamiento:
             raise forms.ValidationError("El estacionamiento no está asociado a esta reserva.")
 
-        # Verificar fechas
         if fecha_inicio and fecha_fin:
             if fecha_fin <= fecha_inicio:
                 raise forms.ValidationError("La fecha de fin debe ser posterior a la fecha de inicio.")
 
-        # Verificar solapamientos
-        if fecha_inicio and fecha_fin:
-            overlapping = Reserva.objects.filter(
-                estacionamiento=estacionamiento,
-                estado__in=['Pendiente', 'Confirmada']
-            ).exclude(pk=self.instance.pk).filter(
-                fechaInicio__lt=fecha_fin,
-                fechaFin__gt=fecha_inicio
+            if fecha_inicio < timezone.now():
+                raise forms.ValidationError("No puedes hacer reservas en el pasado.")
+
+        if estacionamiento and not estacionamiento.disponibilidad:
+            raise forms.ValidationError("Este estacionamiento no está disponible para reservar.")
+
+        overlapping = Reserva.objects.filter(
+            estacionamiento=estacionamiento,
+            estado__in=['Pendiente', 'Confirmada']
+        ).exclude(pk=self.instance.pk).filter(
+            fechaInicio__lt=fecha_fin,
+            fechaFin__gt=fecha_inicio
+        )
+        if overlapping.exists():
+            raise forms.ValidationError(
+                "Este estacionamiento ya está reservado en parte de ese rango horario."
             )
-            if overlapping.exists():
-                raise forms.ValidationError(
-                    "Este estacionamiento ya está reservado en parte de ese rango horario."
-                )
 
         return cleaned_data
 

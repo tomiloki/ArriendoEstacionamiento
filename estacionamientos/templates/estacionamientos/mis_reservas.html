@@ -1,48 +1,26 @@
-{% extends 'bienvenida.html' %}
+{% extends 'base.html' %}
 {% block content %}
-<h2>Mis Reservas (Dueño)</h2>
+<div class="container mt-4">
+    <h2 class="text-center fw-bold text-success">Mis Reservas</h2>
 
-{% if reservas %}
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Estacionamiento</th>
-        <th>Cliente</th>
-        <th>Fecha Inicio</th>
-        <th>Fecha Fin</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in reservas %}
-      <tr>
-        <td>
-          <!-- "Clickeable" para ver detalle -->
-          <a href="{% url 'detalle_reserva' pk=r.id %}">
-            {{ r.id }}
-          </a>
-        </td>
-        <td>{{ r.estacionamiento.ubicacion }}</td>
-        <td>{{ r.cliente.username }}</td>
-        <td>{{ r.fechaInicio }}</td>
-        <td>{{ r.fechaFin }}</td>
-        <td>{{ r.estado }}</td>
-        <td>
-          {% if r.estado != 'Finalizada' %}
-            <a href="{% url 'finalizar_reserva' pk=r.id %}" class="btn btn-warning btn-sm">
-              Finalizar
-            </a>
-          {% else %}
-            <span class="text-muted">Ya finalizada</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>No hay reservas en tus estacionamientos.</p>
-{% endif %}
+    {% for reserva in reservas %}
+        <div class="card shadow mt-3">
+            <div class="card-body">
+                <h4 class="fw-bold text-dark">{{ reserva.estacionamiento.ubicacion }}</h4>
+                <p class="text-muted">📅 {{ reserva.fechaInicio }} - {{ reserva.fechaFin }}</p>
+                <p><strong>Estado:</strong> <span class="badge bg-primary">{{ reserva.estado }}</span></p>
+
+                {% if reserva.estado == "Pendiente" %}
+                    <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-danger btn-sm">❌ Cancelar</a>
+                {% elif reserva.estado == "Confirmada" %}
+                    <a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-success btn-sm">💳 Pagar</a>
+                {% endif %}
+                
+                <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-secondary btn-sm">🔍 Ver Detalles</a>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-center text-muted mt-3">No tienes reservas activas.</p>
+    {% endfor %}
+</div>
 {% endblock %}

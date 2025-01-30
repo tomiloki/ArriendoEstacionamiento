@@ -1,36 +1,87 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Detalle Estacionamiento #{{ estacionamiento.id }}</h2>
-<div class="card p-3 mb-3">
-  <p><strong>Ubicación:</strong> {{ estacionamiento.ubicacion }}</p>
-  <p><strong>Coordenadas:</strong> {{ estacionamiento.coordenadas }}</p>
-  <p><strong>Tarifa:</strong> {{ estacionamiento.tarifa }}</p>
-  <p>
-    <strong>Disponibilidad:</strong>
-    {% if estacionamiento.disponibilidad %}
-      <span class="badge bg-success">Habilitado</span>
-    {% else %}
-      <span class="badge bg-danger">Deshabilitado</span>
-    {% endif %}
-  </p>
+<div class="container mt-4">
+    <h2 class="text-center fw-bold text-success">Detalle del Estacionamiento</h2>
+
+    <div class="card mt-3 shadow">
+        <div class="card-body">
+            <h4 class="card-title text-center text-dark">{{ estacionamiento.ubicacion }}</h4>
+            <p class="text-center text-muted">Tipo: {{ estacionamiento.tipo }}</p>
+            
+            <!-- Mapa -->
+            <div id="map" style="width: 100%; height: 400px;" class="mt-3"></div>
+
+            <!-- Información -->
+            <ul class="list-group list-group-flush mt-3">
+                <li class="list-group-item">💰 Tarifa: <strong>${{ estacionamiento.tarifa }} USD/hora</strong></li>
+                <li class="list-group-item">🚦 Estado: 
+                    {% if estacionamiento.disponibilidad %}
+                        <span class="badge bg-success">Disponible</span>
+                    {% else %}
+                        <span class="badge bg-danger">No Disponible</span>
+                    {% endif %}
+                </li>
+                <li class="list-group-item">🔑 Acceso Remoto: 
+                    {% if estacionamiento.accesoRemoto %}
+                        <span class="badge bg-primary">Sí</span>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </li>
+            </ul>
+
+            <!-- Reservar -->
+            {% if estacionamiento.disponibilidad %}
+                <div class="text-center mt-4">
+                    <a href="{% url 'crear_reserva' estacionamiento.id %}" class="btn btn-lg btn-success">
+                        📅 Reservar este Estacionamiento
+                    </a>
+                </div>
+            {% else %}
+                <p class="text-center text-danger mt-3 fw-bold">Este estacionamiento no está disponible.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sección de Reservas -->
+    <div class="mt-5">
+        <h4 class="text-center text-dark">📅 Reservas Actuales</h4>
+        {% if reservas %}
+            <ul class="list-group mt-3">
+                {% for reserva in reservas %}
+                    <li class="list-group-item">
+                        🕒 Desde: {{ reserva.fechaInicio }} → Hasta: {{ reserva.fechaFin }}
+                        <span class="badge bg-warning">{{ reserva.estado }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-center text-muted">No hay reservas en este estacionamiento.</p>
+        {% endif %}
+    </div>
 </div>
 
-<div class="mb-3">
-  {% if estacionamiento.disponibilidad %}
-    <a href="{% url 'deshabilitar_estacionamiento' estacionamiento.id %}" class="btn btn-warning">Deshabilitar</a>
-  {% else %}
-    <a href="{% url 'habilitar_estacionamiento' estacionamiento.id %}" class="btn btn-info">Habilitar</a>
-  {% endif %}
-  <a href="{% url 'crear_reserva' estacionamiento.id %}" class="btn btn-success">Crear Reserva</a>
-</div>
+<!-- Script de Google Maps -->
+<script>
+    function initMap() {
+        var estacionamiento = {
+            lat: parseFloat("{{ lat|default:-33.4489 }}"),  // Santiago por defecto
+            lng: parseFloat("{{ lng|default:-70.6693 }}")
+        };
 
-<h3>Reservas registradas</h3>
-<ul class="list-group">
-  {% for reserva in estacionamiento.reservas.all %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      Reserva #{{ reserva.id }} 
-      <span>({{ reserva.estado }}) - Cliente: {{ reserva.cliente.username }}</span>
-    </li>
-  {% endfor %}
-</ul>
+        var map = new google.maps.Map(document.getElementById('map'), {
+            center: estacionamiento,
+            zoom: 15
+        });
+
+        var marker = new google.maps.Marker({
+            position: estacionamiento,
+            map: map,
+            title: "{{ estacionamiento.ubicacion }}"
+        });
+    }
+</script>
+
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap" async defer></script>
 {% endblock %}

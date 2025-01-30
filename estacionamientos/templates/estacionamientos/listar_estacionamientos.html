@@ -1,144 +1,112 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<h2>Buscar Estacionamientos Cercanos</h2>
+<div class="container mt-4">
+    <h2 class="text-center fw-bold text-success">🚗 Encuentra tu Estacionamiento</h2>
 
-<div id="map" style="height: 400px; margin-bottom:1rem;"></div>
+    <!-- Filtro de búsqueda con Google Places API -->
+    <div class="card shadow-sm p-3 bg-light">
+        <label for="ubicacion" class="form-label fw-bold text-dark">📍 Ingresa tu ubicación:</label>
+        <input type="text" id="ubicacion" class="form-control" placeholder="Ej: Santiago, Chile">
+        <small class="text-muted">Tu ubicación se usará para mostrar estacionamientos cercanos.</small>
+    </div>
 
-<div id="info" class="mb-3">
-  <p>Buscando tu ubicación...</p>
+    <!-- Mapa -->
+    <div class="card shadow-lg border-0 mt-3">
+        <div class="card-body p-0">
+            <div id="map" style="width: 100%; height: 450px; border-radius: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Lista de Estacionamientos -->
+    <div class="mt-4">
+        <h4 class="text-dark fw-bold">📍 Estacionamientos disponibles:</h4>
+        <ul class="list-group" id="lista-estacionamientos">
+            {% for estacionamiento in estacionamientos %}
+                {% if estacionamiento.id %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center shadow-sm p-3">
+                        <div>
+                            <h5 class="fw-bold text-success">{{ estacionamiento.ubicacion }}</h5>
+                            <p class="mb-0 text-muted">💰 <strong>${{ estacionamiento.tarifa }} USD/hora</strong></p>
+                        </div>
+                        <a href="{% url 'detalle_estacionamiento' estacionamiento.id %}" class="btn btn-success fw-bold">
+                            🔍 Ver Detalles
+                        </a>
+                    </li>
+                {% endif %}
+            {% empty %}
+                <li class="list-group-item text-center text-danger fw-bold">❌ No hay estacionamientos disponibles.</li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 
-<div id="listaCercanos" class="row g-3"></div>
+<!-- Script de Google Maps con validaciones -->
+<script>
+    let userMarker;
+    let map;
+    let userLocation = null;
+    let estacionamientos = JSON.parse('{{ estacionamientos_json|escapejs }}');
 
-
-
-  <script>
-function initMap() {
-  let mapCenter = { lat: -33.44, lng: -70.66 };
-  let map = new google.maps.Map(document.getElementById("map"), {
-    center: mapCenter,
-    zoom: 12
-  });
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      let userLat = pos.coords.latitude;
-      let userLng = pos.coords.longitude;
-
-      // Centrar el mapa
-      map.setCenter({ lat: userLat, lng: userLng });
-      new google.maps.Marker({
-        position: { lat: userLat, lng: userLng },
-        map: map,
-        title: "Tu Ubicación"
-      });
-
-      // AHORA hacemos el “forEach(e => ...)” que usa userLat,userLng
-      let cercanos = [];
-      estacionamientos.forEach(e => {
-        if (e.coordenadas) {
-          let parts = e.coordenadas.split(",");
-          let lat = parseFloat(parts[0]);
-          let lng = parseFloat(parts[1]);
-          if (!isNaN(lat) && !isNaN(lng)) {
-            let d = distanciaEnKm(userLat, userLng, lat, lng);
-            if (d < 10) {
-              // Marcador
-              let marker = new google.maps.Marker({
-                position: { lat, lng },
-                map: map,
-                title: e.ubicacion
-              });
-              // Click => detalle
-              marker.addListener("click", () => {
-                window.location.href = e.detalle_url;
-              });
-              // Insertar en “cercanos”
-              e.distancia = d;
-              cercanos.push(e);
-            }
-          }
-        }
-      });
-
-      // Ordenar y mostrar la lista
-      cercanos.sort((a,b) => a.distancia - b.distancia);
-      renderCercanos(cercanos);
-
-    }, (error) => {
-      console.error(error);
-      // Si no se pudo geolocalizar, igual “forEach”, pero userLat,userLng=null => no filtras
-      dibujarSinUbicacion(map);
-    });
-  } else {
-    // Sin geolocalización
-    dibujarSinUbicacion(map);
-  }
-}
-
-function distanciaEnKm(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radio de la Tierra en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-
-const estacionamientos = JSON.parse('{{ estacionamientos_json|safe }}');
-
-function dibujarSinUbicacion(map) {
-  // Quizá muestres todos sin filtrar, o nada.
-  let cercanos = [];
-  estacionamientos.forEach(e => {
-    // Sin user coords => no filtras, 
-    // o lo que quieras.  
-    // Ej: creas markers para todos
-    if (e.coordenadas) {
-      let parts = e.coordenadas.split(",");
-      let lat = parseFloat(parts[0]);
-      let lng = parseFloat(parts[1]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        let marker = new google.maps.Marker({
-          position: { lat, lng },
-          map: map,
-          title: e.ubicacion
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: -33.4489, lng: -70.6693 }, // Santiago (por defecto)
+            zoom: 12,
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false
         });
-      }
+
+        // Obtener ubicación del usuario
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    map.setCenter(userLocation);
+
+                    userMarker = new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                        title: "Tu ubicación"
+                    });
+                },
+                function() {
+                    console.warn("No se pudo obtener la ubicación del usuario.");
+                }
+            );
+        }
+
+        // Añadir estacionamientos al mapa
+        estacionamientos.forEach(function(estacionamiento) {
+            if (estacionamiento.coordenadas && estacionamiento.id && estacionamiento.id !== 0) {
+                let coords = estacionamiento.coordenadas.split(',');
+                if (coords.length !== 2) return;  
+
+                let marker = new google.maps.Marker({
+                    position: { lat: parseFloat(coords[0]), lng: parseFloat(coords[1]) },
+                    map: map,
+                    title: estacionamiento.ubicacion,
+                    animation: google.maps.Animation.DROP
+                });
+
+                let infoWindow = new google.maps.InfoWindow({
+                    content: `<div style="max-width: 200px;">
+                                <h6 class="fw-bold">${estacionamiento.ubicacion}</h6>
+                                <p class="text-muted">💰 $${estacionamiento.tarifa} USD/hora</p>
+                                <a href="/estacionamientos/${estacionamiento.id}/" class="btn btn-sm btn-success mt-2">Ver Detalles</a>
+                              </div>`
+                });
+
+                marker.addListener("click", function () {
+                    infoWindow.open(map, marker);
+                });
+            }
+        });
     }
-  });
-}
-
-function renderCercanos(cercanos) {
-  const container = document.getElementById("listaCercanos");
-  container.innerHTML = "";
-  cercanos.forEach(e => {
-    let card = document.createElement("div");
-    card.className = "col-md-4";
-    card.innerHTML = `
-      <div class="card" style="cursor:pointer">
-        <div class="card-body">
-          <h5 class="card-title">${e.ubicacion}</h5>
-          <p class="card-text">Distancia: ${e.distancia.toFixed(2)} km</p>
-        </div>
-      </div>
-    `;
-    // Click => detalle
-    card.addEventListener("click", () => {
-      window.location.href = e.detalle_url;
-    });
-    container.appendChild(card);
-  });
-}
 </script>
-
-<script
-  src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap"
-  async
-  defer
-></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&libraries=places&callback=initMap" async defer></script>
 {% endblock %}

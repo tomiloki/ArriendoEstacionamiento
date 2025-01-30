@@ -1,103 +1,117 @@
-<!-- base.html -->
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8">
     <title>Sistema Arriendo Estacionamientos</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link 
-      rel="stylesheet" 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-    />
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
-  </head>
-  <body>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow">
-      <div class="container">
-        <a class="navbar-brand fs-3" href="{% url 'home' %}">
-          Mi Estacionamiento
-        </a>
-        <button 
-          class="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
-          aria-expanded="false"
-          aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          {% if user.is_authenticated %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <!-- Condicional por rol -->
-              {% if user.rol == 'cliente' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'listar_estacionamientos' %}">
-                    Ver Estacionamientos
-                  </a>
-                </li>
-                <!-- Otras opciones específicas del cliente -->
-              {% elif user.rol == 'dueno' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'crear_estacionamiento' %}">
-                    Agregar Estacionamiento
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'mis_reservas' %}">Reservas</a>
-                </li>   
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'reporte_transacciones' %}">
-                    Transacciones
-                  </a>
-                </li>         
-                <!-- Otras opciones específicas del dueño -->
-              {% elif user.rol == 'administrador' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'administracion_usuarios' %}">
-                    Administración
-                  </a>
-                </li>
-              {% elif user.rol == 'consultor' %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'listar_estacionamientos' %}">
-                    Consultar Estacionamientos
-                  </a>
-                </li>
-              {% endif %}
-            </ul>
+        <div class="container">
+            <a class="navbar-brand fs-3" href="{% url 'home' %}">
+                🚗 Mi Estacionamiento
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             
-            <!-- Botón de logout con POST -->
-            <form method="post" action="{% url 'logout' %}">
-              {% csrf_token %}
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <button class="nav-link" type="submit">Cerrar Sesión</button>
-            </ul>
-            </form>
-            
-          {% else %}
-            <!-- Usuario no autenticado -->
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'register' %}">Registrarse</a>
-              </li>
-            </ul>
-            <form method="get" action="{% url 'login' %}">
-              <button class="btn btn-link nav-link text-white" type="submit">Iniciar Sesión</button>
-            </form>
-          {% endif %}
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                {% if user.is_authenticated %}
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Opciones según rol -->
+                    {% if user.rol == 'cliente' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listar_estacionamientos' %}">🔍 Ver Estacionamientos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'mis_reservas' %}">📅 Mis Reservas</a>
+                        </li>
+                    {% elif user.rol == 'dueno' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'crear_estacionamiento' %}">➕ Agregar Estacionamiento</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'reservas_dueno' %}">📋 Reservas de mis Estacionamientos</a>
+                        </li>   
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'reporte_transacciones' %}">💰 Transacciones</a>
+                        </li>         
+                    {% elif user.rol == 'administrador' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'administracion_usuarios' %}">⚙️ Administración</a>
+                        </li>
+                    {% elif user.rol == 'consultor' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'listar_estacionamientos' %}">📊 Consultar Estacionamientos</a>
+                        </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- Botón de Logout -->
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-light" type="submit">Cerrar Sesión</button>
+                </form>
+                
+                {% else %}
+                <!-- Usuario no autenticado -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">✍️ Registrarse</a>
+                    </li>
+                </ul>
+                <form method="get" action="{% url 'login' %}">
+                    <button class="btn btn-outline-light" type="submit">🔑 Iniciar Sesión</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
-      </div>
     </nav>
 
+    <!-- Contenido Principal -->
     <div class="container mt-4">
-      {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
     </div>
 
+    <!-- Footer Profesional -->
+    <footer class="footer text-white mt-5 p-4 text-center">
+      <div class="container">
+          <div class="row">
+              <div class="col-md-4 mb-3">
+                  <h5>📍 Nuestra Ubicación</h5>
+                  <p>Santiago, Chile</p>
+              </div>
+              <div class="col-md-4 mb-3">
+                  <h5>📞 Contacto</h5>
+                  <p>Email: soporte@miestacionamiento.com</p>
+                  <p>Teléfono: +56 9 1234 5678</p>
+              </div>
+              <div class="col-md-4">
+                  <h5>🌍 Síguenos en Redes Sociales</h5>
+                  <a href="https://facebook.com" target="_blank" class="text-white me-3">
+                      <img src="{% static 'img/facebook.png' %}" alt="Facebook" width="30">
+                  </a>
+                  <a href="https://twitter.com" target="_blank" class="text-white me-3">
+                      <img src="{% static 'img/twitter.png' %}" alt="Twitter" width="30">
+                  </a>
+                  <a href="https://instagram.com" target="_blank" class="text-white">
+                      <img src="{% static 'img/instagram.png' %}" alt="Instagram" width="30">
+                  </a>
+              </div>
+          </div>
+          <hr class="bg-light">
+          <p class="mb-0">© 2025 Mi Estacionamiento - Todos los derechos reservados.</p>
+      </div>
+  </footer>
+  
+  
+
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+</body>
 </html>

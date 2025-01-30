@@ -1,14 +1,41 @@
 /* static/css/styles.css */
 
 /* Color de fondo general */
-body {
-    background-color: #f0fff0; /* un verde muy clarito (HoneyDew) */
-    color: #333; /* texto en gris oscuro */
-  }
-  
-  .navbar-custom {
-    background-color: #78c2ad !important; /* verde suave custom */
-  }
+html, body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  flex: 1;
+}
+
+/* Footer pegado abajo siempre */
+.footer {
+  background-color: #78c2ad !important;
+  color: white !important;
+  text-align: center;
+  padding: 15px 0;
+  width: 100%;
+  margin-top: auto;
+  position: relative;
+  bottom: 0;
+}
+
+.navbar-custom {
+  background-color: #78c2ad !important; /* Verde exacto para el navbar */
+}
+
+.social-icons a {
+  transition: transform 0.2s ease-in-out;
+}
+
+.social-icons a:hover {
+  transform: scale(1.2);
+}
+
   
   /* Ejemplo de override de .btn-success a un verde distinto */
   .btn-success {
@@ -20,4 +47,8 @@ body {
     background-color: #5dae8a !important;
     border-color: #539978 !important;
   }
+
+
+
+  
   

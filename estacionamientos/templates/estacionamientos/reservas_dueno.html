@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center fw-bold text-success">📅 Reservas de mis Estacionamientos</h2>
+
+    {% if reservas %}
+        <ul class="list-group mt-3 shadow-sm">
+            {% for reserva in reservas %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold">{{ reserva.estacionamiento.ubicacion }}</h5>
+                        <p class="mb-0 text-muted">🕒 {{ reserva.fechaInicio }} → {{ reserva.fechaFin }}</p>
+                        <p class="mb-0 text-muted">👤 Cliente: {{ reserva.cliente.username }}</p>
+                    </div>
+                    <span class="badge 
+                        {% if reserva.estado == 'Pendiente' %} bg-warning 
+                        {% elif reserva.estado == 'Confirmada' %} bg-primary 
+                        {% elif reserva.estado == 'Finalizada' %} bg-success 
+                        {% elif reserva.estado == 'Cancelada' %} bg-danger 
+                        {% endif %}">
+                        {{ reserva.estado }}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-center text-muted mt-3">No hay reservas en tus estacionamientos.</p>
+    {% endif %}
+</div>
+{% endblock %}

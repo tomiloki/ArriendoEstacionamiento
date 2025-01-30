@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center fw-bold text-success">Reservar Estacionamiento</h2>
+    <h2 class="text-center fw-bold text-success">📅 Reservar Estacionamiento</h2>
 
     <div class="card shadow mt-3">
         <div class="card-body">
@@ -13,11 +13,11 @@
             <form method="POST" class="mt-4">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Fecha y Hora de Inicio</label>
+                    <label class="form-label fw-bold">📅 Fecha y Hora de Inicio</label>
                     {{ form.fechaInicio }}
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Fecha y Hora de Fin</label>
+                    <label class="form-label fw-bold">📅 Fecha y Hora de Fin</label>
                     {{ form.fechaFin }}
                 </div>
                 
@@ -27,25 +27,44 @@
     </div>
 </div>
 
-<!-- Script de Google Maps -->
+<!-- Ventana de información mejorada -->
 <script>
     function initMap() {
         var estacionamiento = {
-            lat: parseFloat("{{ estacionamiento.coordenadas.split(',')[0] }}"),
-            lng: parseFloat("{{ estacionamiento.coordenadas.split(',')[1] }}")
+            lat: parseFloat("{{ lat }}"),
+            lng: parseFloat("{{ lng }}")
         };
 
         var map = new google.maps.Map(document.getElementById('map'), {
             center: estacionamiento,
-            zoom: 15
+            zoom: 15,
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false
         });
 
         var marker = new google.maps.Marker({
             position: estacionamiento,
             map: map,
-            title: "{{ estacionamiento.ubicacion }}"
+            title: "{{ estacionamiento.ubicacion }}",
+            animation: google.maps.Animation.DROP
         });
+
+        var infoWindow = new google.maps.InfoWindow({
+            content: `<div style="max-width: 200px;">
+                        <h6 class="fw-bold">{{ estacionamiento.ubicacion }}</h6>
+                        <p class="text-muted">💰 $<span id="tarifa"></span> USD/hora</p>
+                      </div>`
+        });
+
+        marker.addListener("click", function () {
+            infoWindow.open(map, marker);
+        });
+
+        // 🔹 CORREGIMOS LA TARIFA DIRECTAMENTE EN JS PARA EVITAR PROBLEMAS 🔹
+        document.getElementById("tarifa").textContent = parseFloat("{{ tarifa }}").toFixed(2);
     }
 </script>
+
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap" async defer></script>
 {% endblock %}

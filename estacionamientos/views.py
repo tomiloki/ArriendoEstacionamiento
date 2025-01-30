@@ -105,7 +105,6 @@ def crear_reserva(request, estacionamiento_id):
     """
     estacionamiento = get_object_or_404(Estacionamiento, id=estacionamiento_id)
 
-    # Verificar disponibilidad antes de permitir reserva
     if not estacionamiento.disponibilidad:
         messages.error(request, "Este estacionamiento no está disponible para reservas.")
         return redirect('detalle_estacionamiento', pk=estacionamiento.id)
@@ -117,7 +116,6 @@ def crear_reserva(request, estacionamiento_id):
             reserva.cliente = request.user
             reserva.estacionamiento = estacionamiento
 
-            # Validación de solapamiento
             overlapping = Reserva.objects.filter(
                 estacionamiento=estacionamiento,
                 estado__in=['Pendiente', 'Confirmada']
@@ -136,11 +134,20 @@ def crear_reserva(request, estacionamiento_id):
     else:
         form = ReservaForm()
 
+    # 🔹 Convertimos coordenadas en variables separadas
+    coordenadas = estacionamiento.coordenadas.split(",") if estacionamiento.coordenadas else ["-33.4489", "-70.6693"]
+    lat = float(coordenadas[0])
+    lng = float(coordenadas[1])
+
     return render(request, 'estacionamientos/crear_reserva.html', {
         'form': form,
         'estacionamiento': estacionamiento,
+        'tarifa': float(estacionamiento.tarifa) if estacionamiento.tarifa else 0.00,
+        'lat': lat,  # 🔥 Mandamos latitud
+        'lng': lng,  # 🔥 Mandamos longitud
         'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
     })
+
 
 # 🔍 DETALLE DE RESERVA
 @login_required
@@ -346,7 +353,18 @@ def pagar_reserva(request, reserva_id):
     return render(request, 'estacionamientos/pagar_reserva.html', {
         'reserva': reserva
     })
+    
+@login_required
+def reservas_dueno(request):
+    """
+    Vista para que un dueño vea todas las reservas de sus estacionamientos.
+    """
+    estacionamientos = Estacionamiento.objects.filter(owner=request.user)
+    reservas = Reserva.objects.filter(estacionamiento__in=estacionamientos).order_by('-fechaInicio')
 
+    return render(request, 'estacionamientos/reservas_dueno.html', {
+        'reservas': reservas
+    })
 
 
 

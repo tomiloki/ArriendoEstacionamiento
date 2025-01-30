@@ -1,26 +1,38 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center fw-bold text-success">Mis Reservas</h2>
+    <h2 class="text-center fw-bold text-success">📅 Mis Reservas</h2>
 
-    {% for reserva in reservas %}
-        <div class="card shadow mt-3">
-            <div class="card-body">
-                <h4 class="fw-bold text-dark">{{ reserva.estacionamiento.ubicacion }}</h4>
-                <p class="text-muted">📅 {{ reserva.fechaInicio }} - {{ reserva.fechaFin }}</p>
-                <p><strong>Estado:</strong> <span class="badge bg-primary">{{ reserva.estado }}</span></p>
-
-                {% if reserva.estado == "Pendiente" %}
-                    <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-danger btn-sm">❌ Cancelar</a>
-                {% elif reserva.estado == "Confirmada" %}
-                    <a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-success btn-sm">💳 Pagar</a>
-                {% endif %}
-                
-                <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-secondary btn-sm">🔍 Ver Detalles</a>
-            </div>
-        </div>
-    {% empty %}
+    {% if reservas %}
+        <ul class="list-group mt-3 shadow-sm">
+            {% for reserva in reservas %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold">{{ reserva.estacionamiento.ubicacion }}</h5>
+                        <p class="mb-0 text-muted">🕒 {{ reserva.fechaInicio }} → {{ reserva.fechaFin }}</p>
+                        <span class="badge 
+                            {% if reserva.estado == 'Pendiente' %} bg-warning 
+                            {% elif reserva.estado == 'Confirmada' %} bg-primary 
+                            {% elif reserva.estado == 'Finalizada' %} bg-success 
+                            {% elif reserva.estado == 'Cancelada' %} bg-danger 
+                            {% endif %}">
+                            {{ reserva.estado }}
+                        </span>
+                    </div>
+                    <div>
+                        {% if reserva.estado == 'Pendiente' %}
+                            <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-sm btn-danger">❌ Cancelar</a>
+                        {% elif reserva.estado == 'Confirmada' %}
+                            <a href="{% url 'pagar_reserva' reserva.id %}" class="btn btn-sm btn-primary">💳 Pagar</a>
+                        {% elif reserva.estado == 'Pagada' %}
+                            <a href="{% url 'generar_recibo' reserva.id %}" class="btn btn-sm btn-success">📄 Recibo</a>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
         <p class="text-center text-muted mt-3">No tienes reservas activas.</p>
-    {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

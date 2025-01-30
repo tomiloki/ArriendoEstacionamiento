@@ -1,13 +1,86 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-lg-6 col-md-8 col-sm-12">
-    <h2 class="mb-4">Registro de Usuario</h2>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-success">Registrar</button>
-    </form>
+  <div class="col-lg-5 col-md-6 col-sm-12">
+    <div class="card shadow-lg p-4" style="border-radius: 10px; background: #f8f9fa;">
+      <h2 class="mb-4 text-center" style="color: #198754;">Crear Cuenta</h2>
+      
+      {% if form.errors %}
+      <p class="text-danger small text-center">⚠️ Hay errores en el formulario. Revise los campos marcados.</p>
+      {% endif %}
+      
+      <form method="post" class="needs-validation" novalidate onsubmit="showFormData(event)">
+          {% csrf_token %}
+          
+          {% for field in form %}
+          {% if field.name not in "cuenta_bancaria tarjeta_credito banco" %}
+          <div class="mb-3" id="field_{{ field.name }}">
+              <label for="{{ field.id_for_label }}" class="form-label fw-bold text-dark">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}  
+              <small class="form-text text-muted">{{ field.help_text }}</small>
+              {% endif %}
+              {% for error in field.errors %}
+              <div class="text-danger small">⚠️ {{ error }}</div>
+              {% endfor %}
+          </div>
+          {% endif %}
+          {% endfor %}
+          
+          <div id="extra-fields">
+          </div>
+          
+          <button type="submit" class="btn btn-success w-100 fw-bold">Registrarse</button>
+      </form>
+    </div>
   </div>
 </div>
+
+<script>
+// Mostrar campos adicionales según el rol seleccionado
+let roleField = document.getElementById('id_rol');
+let extraFieldsDiv = document.getElementById('extra-fields');
+
+function updateExtraFields() {
+    extraFieldsDiv.innerHTML = "";
+    if (roleField.value === "dueno") {
+        extraFieldsDiv.innerHTML = `
+            <div class="mb-3" id="extra-owner-fields">
+                <label for="id_cuenta_bancaria" class="form-label fw-bold text-dark">Cuenta Bancaria</label>
+                <input type="text" name="cuenta_bancaria" id="id_cuenta_bancaria" class="form-control" placeholder="Ingrese su cuenta bancaria">
+                <div id="error_cuenta_bancaria"></div>
+                
+                <label for="id_banco" class="form-label fw-bold text-dark">Banco</label>
+                <input type="text" name="banco" id="id_banco" class="form-control" placeholder="Ingrese el nombre de su banco">
+                <div id="error_banco"></div>
+            </div>`;
+    } else if (roleField.value === "cliente") {
+        extraFieldsDiv.innerHTML = `
+            <div class="mb-3" id="extra-client-fields">
+                <label for="id_tarjeta_credito" class="form-label fw-bold text-dark">Tarjeta de Crédito</label>
+                <input type="text" name="tarjeta_credito" id="id_tarjeta_credito" class="form-control" placeholder="Ingrese su tarjeta de crédito">
+                <div id="error_tarjeta_credito"></div>
+            </div>`;
+    }
+}
+
+roleField.addEventListener('change', updateExtraFields);
+updateExtraFields(); // Llamar al cargar la página
+
+// Mostrar datos ingresados en la consola (sin contraseña)
+function showFormData(event) {
+    event.preventDefault();
+    let formData = new FormData(event.target);
+    let jsonData = {};
+    formData.forEach((value, key) => {
+        if (key !== 'password1' && key !== 'password2') {
+            jsonData[key] = value;
+        } else {
+            jsonData[key] = '**** (Hashed)';
+        }
+    });
+    console.log("Datos del formulario:", JSON.stringify(jsonData, null, 2));
+    event.target.submit();
+}
+</script>
 {% endblock %}

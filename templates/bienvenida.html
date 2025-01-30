@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-5 text-center" style="border-radius: 15px; background: #f8f9fa; max-width: 600px;">
+        <h1 class="mb-4 fw-bold" style="color: #198754;">¡Bienvenido!</h1>
+        {% for mensaje in mensajes %}
+        <div class="alert alert-success">{{ mensaje }}</div>
+        {% endfor %}
+        <p class="text-muted">Ahora puedes comenzar a utilizar nuestros servicios.</p>
+        
+        {% if user.rol == "dueno" %}
+        <a href="{% url 'crear_estacionamiento' %}" class="btn btn-success btn-lg fw-bold shadow">Ir a mi Panel de Dueño</a>
+        {% else %}
+        <a href="{% url 'listar_estacionamientos' %}" class="btn btn-success btn-lg fw-bold shadow">Ver Estacionamientos</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

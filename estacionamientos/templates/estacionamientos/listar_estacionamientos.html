@@ -40,9 +40,10 @@
     </div>
 </div>
 
-<!-- Script de Google Maps con validaciones -->
+<!-- Script de Google Maps con Autocompletado y Ubicación Manual -->
 <script>
     let userMarker;
+    let manualMarker;
     let map;
     let userLocation = null;
     let estacionamientos = JSON.parse('{{ estacionamientos_json|escapejs }}');
@@ -79,6 +80,34 @@
                 }
             );
         }
+
+        // Autocompletado en el input de búsqueda
+        let input = document.getElementById('ubicacion');
+        let autocomplete = new google.maps.places.Autocomplete(input);
+        autocomplete.bindTo('bounds', map);
+
+        autocomplete.addListener('place_changed', function () {
+            let place = autocomplete.getPlace();
+            if (!place.geometry) {
+                return;
+            }
+
+            // Centrar el mapa en la nueva ubicación
+            map.setCenter(place.geometry.location);
+            map.setZoom(14);
+
+            // Mover el marcador del usuario a la nueva ubicación
+            if (manualMarker) {
+                manualMarker.setPosition(place.geometry.location);
+            } else {
+                manualMarker = new google.maps.Marker({
+                    position: place.geometry.location,
+                    map: map,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                    title: "Ubicación ingresada"
+                });
+            }
+        });
 
         // Añadir estacionamientos al mapa
         estacionamientos.forEach(function(estacionamiento) {

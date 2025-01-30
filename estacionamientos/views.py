@@ -19,23 +19,24 @@ def listar_estacionamientos(request):
     Muestra todos los estacionamientos disponibles en un mapa interactivo.
     """
     estacionamientos = Estacionamiento.objects.filter(disponibilidad=True)
-    
-    # 🔹 Convertimos los datos a JSON para pasarlos al mapa
+
     estacionamientos_list = [
         {
-            "id": est.id if est.id else None,  # Evitar IDs inválidos
+            "id": est.id if est.id else None,
             "ubicacion": est.ubicacion,
-            "coordenadas": est.coordenadas if est.coordenadas else None,  # Evitar errores si no hay coordenadas
+            "coordenadas": est.coordenadas if est.coordenadas else None,
             "tarifa": est.tarifa,
             "detalle_url": reverse("detalle_estacionamiento", args=[est.id]) if est.id else "#"
         }
-        for est in estacionamientos if est.id  # Evitar incluir estacionamientos sin ID
+        for est in estacionamientos if est.id
     ]
 
     return render(request, "estacionamientos/listar_estacionamientos.html", {
+        "estacionamientos": estacionamientos,  # ✅ Asegurar que se pasa al template
         "estacionamientos_json": json.dumps(estacionamientos_list),
         "google_maps_key": settings.GOOGLE_MAPS_API_KEY,
     })
+
 
 
 

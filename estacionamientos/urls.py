@@ -1,26 +1,40 @@
 # estacionamientos/urls.py
 
 from django.urls import path
+from pagos.views import iniciar_pago
 from .views import (
-    listar_estacionamientos, crear_estacionamiento, detalle_estacionamiento,
-    habilitar_estacionamiento, deshabilitar_estacionamiento,
-    crear_reserva, detalle_reserva, reporte_transacciones,
-    calificar_reserva, finalizar_reserva, mis_reservas, reservas_dueno
+    listar_estacionamientos,
+    listar_estacionamientos_dueno,  # ✅ Nuevo
+    crear_estacionamiento,
+    detalle_estacionamiento,
+    toggle_estacionamiento,
+    mis_reservas,
+    reservas_dueno,
+    crear_reserva,
+    detalle_reserva,
+    generar_recibo,
+    editar_estacionamiento,
 )
 
 urlpatterns = [
+    # Rutas para los clientes
     path('', listar_estacionamientos, name='listar_estacionamientos'),
+    path('mis-reservas/', mis_reservas, name='mis_reservas'),
+    
+    # Rutas para los dueños
+    path('mis/', listar_estacionamientos_dueno, name='listar_estacionamientos_dueno'),  # ✅ Nuevo
+    path('reservas/', reservas_dueno, name='reservas_dueno'),
     path('nuevo/', crear_estacionamiento, name='crear_estacionamiento'),
     path('<int:pk>/', detalle_estacionamiento, name='detalle_estacionamiento'),
-    path('<int:pk>/habilitar/', habilitar_estacionamiento, name='habilitar_estacionamiento'),
-    path('<int:pk>/deshabilitar/', deshabilitar_estacionamiento, name='deshabilitar_estacionamiento'),
-    path('reserva/nuevo/<int:estacionamiento_id>/', crear_reserva, name='crear_reserva'),
+    path('toggle/<int:pk>/', toggle_estacionamiento, name='toggle_estacionamiento'),
+    path('editar/<int:pk>/', editar_estacionamiento, name='editar_estacionamiento'),
+    
+    # Rutas de reservas
+    path('reservar/<int:pk>/', crear_reserva, name='crear_reserva'),
     path('reserva/<int:pk>/', detalle_reserva, name='detalle_reserva'),
-    path('reporte/', reporte_transacciones, name='reporte_transacciones'),
-    path('reserva/calificar/<int:reserva_id>/', calificar_reserva, name='calificar_reserva'),
-    path('reserva/finalizar/<int:pk>/', finalizar_reserva, name='finalizar_reserva'),
-    path('mis-reservas/', mis_reservas, name='mis_reservas'),
-    path('reservas/dueno/', reservas_dueno, name='reservas_dueno'),
 
-
+    
+    # Rutas de pagos
+    path('reserva/<int:pk>/pago/', iniciar_pago, name='iniciar_pago'),
+    path('reserva/<int:pk>/recibo/', generar_recibo, name='generar_recibo'),
 ]

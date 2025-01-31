@@ -1,30 +1,52 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center fw-bold text-success">📅 Reservas de mis Estacionamientos</h2>
+    <h2 class="text-center fw-bold text-success">📋 Reservas de mis Estacionamientos</h2>
 
-    {% if reservas %}
-        <ul class="list-group mt-3 shadow-sm">
-            {% for reserva in reservas %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="fw-bold">{{ reserva.estacionamiento.ubicacion }}</h5>
-                        <p class="mb-0 text-muted">🕒 {{ reserva.fechaInicio }} → {{ reserva.fechaFin }}</p>
-                        <p class="mb-0 text-muted">👤 Cliente: {{ reserva.cliente.username }}</p>
+    {% if estacionamientos_info %}
+        <div class="accordion mt-3" id="estacionamientosAccordion">
+            {% for info in estacionamientos_info %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="true" 
+                                aria-controls="collapse{{ forloop.counter }}">
+                            🚗 {{ info.estacionamiento.ubicacion }} - 
+                            {% if info.estado_reserva != "Sin reservas" %}
+                                <span class="badge bg-warning">{{ info.estado_reserva }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Sin reservas</span>
+                            {% endif %}
+                        </button>
+                    </h2>
+
+                    <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse show" 
+                         aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#estacionamientosAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Tipo:</strong> {{ info.estacionamiento.tipo }}</p>
+                            <p><strong>Tarifa:</strong> ${{ info.estacionamiento.tarifa }} USD/hora</p>
+
+                            {% if info.estado_reserva != "Sin reservas" %}
+                                <h5 class="text-dark">📅 Reservas Actuales</h5>
+                                <ul class="list-group">
+                                    {% for reserva in info.reservas %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            🕒 {{ reserva.fechaInicio }} - {{ reserva.fechaFin }}
+                                            <span class="badge bg-danger">Pago Pendiente: {{ info.pago_pendiente }}</span>
+                                            <a href="{% url 'detalle_reserva' reserva.id %}" class="btn btn-sm btn-primary">🔍 Ver Detalles</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">❌ No hay reservas en este estacionamiento.</p>
+                            {% endif %}
+                        </div>
                     </div>
-                    <span class="badge 
-                        {% if reserva.estado == 'Pendiente' %} bg-warning 
-                        {% elif reserva.estado == 'Confirmada' %} bg-primary 
-                        {% elif reserva.estado == 'Finalizada' %} bg-success 
-                        {% elif reserva.estado == 'Cancelada' %} bg-danger 
-                        {% endif %}">
-                        {{ reserva.estado }}
-                    </span>
-                </li>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p class="text-center text-muted mt-3">No hay reservas en tus estacionamientos.</p>
+        <p class="text-center text-danger fw-bold">❌ No tienes estacionamientos registrados.</p>
     {% endif %}
 </div>
 {% endblock %}

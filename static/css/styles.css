@@ -28,6 +28,31 @@ html, body {
   background-color: #78c2ad !important; /* Verde exacto para el navbar */
 }
 
+.navbar {
+  transition: all 0.3s ease-in-out;
+}
+.navbar .nav-link {
+  font-size: 1.1rem;
+  padding: 10px 15px;
+}
+.navbar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+}
+.navbar .btn {
+  font-size: 1rem;
+  padding: 8px 15px;
+}
+
+.text-green {
+  color: #78c2ad !important;
+  border-color: #78c2ad !important;
+}
+.text-green:hover {
+  background-color: #78c2ad !important;
+  color: white !important;
+}
+
 .social-icons a {
   transition: transform 0.2s ease-in-out;
 }
@@ -37,16 +62,22 @@ html, body {
 }
 
   
-  /* Ejemplo de override de .btn-success a un verde distinto */
-  .btn-success {
-    background-color: #6ac19b !important;
-    border-color: #62ac8d !important;
-  }
-  
-  .btn-success:hover {
-    background-color: #5dae8a !important;
-    border-color: #539978 !important;
-  }
+/* Ejemplo de override de .btn-success a un verde distinto */
+.btn-success {
+  background-color: #6ac19b !important;
+  border-color: #62ac8d !important;
+}
+
+.btn-success:hover {
+  background-color: #5dae8a !important;
+  border-color: #539978 !important;
+}
+
+  /* Evita que el botón se vea afectado por el enlace */
+.toggle-btn {
+  position: relative;
+  z-index: 10;
+}
 
 
 

@@ -1,8 +1,10 @@
 # pagos/urls.py
 
 from django.urls import path
-from .views import procesar_pago
+from .views import iniciar_pago, reporte_transacciones
 
 urlpatterns = [
-    path('procesar/<int:reserva_id>/', procesar_pago, name='procesar_pago'),
+    path('iniciar/<int:reserva_id>/', iniciar_pago, name='iniciar_pago'),
+    path('reporte-transacciones/', reporte_transacciones, name='reporte_transacciones'),
+
 ]

@@ -8,7 +8,7 @@ from .models import Estacionamiento, Reserva
 from .forms import EstacionamientoForm, ReservaForm, CalificacionForm
 from .decorators import solo_duenos, solo_clientes
 import json
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from reportlab.pdfgen import canvas
 from django.core.mail import send_mail
 
@@ -52,62 +52,111 @@ def crear_estacionamiento(request):
             estacionamiento.coordenadas = request.POST.get("coordenadas", "")
             estacionamiento.save()
             messages.success(request, "Estacionamiento creado con éxito.")
-            return redirect('listar_estacionamientos')
+            return redirect('listar_estacionamientos_dueno')
     else:
         form = EstacionamientoForm()
     return render(request, 'estacionamientos/crear_estacionamiento.html', {
         'form': form,
         'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
     })
+    
+@login_required
+@solo_duenos
+def listar_estacionamientos_dueno(request):
+    """
+    Permite que un dueño vea todos sus estacionamientos registrados.
+    """
+    estacionamientos = Estacionamiento.objects.filter(owner=request.user).order_by('-id')
+
+    return render(request, 'estacionamientos/mis_estacionamientos.html', {
+        'estacionamientos': estacionamientos
+    })
 
 # 🏢 DETALLE ESTACIONAMIENTO
 @login_required
 def detalle_estacionamiento(request, pk):
+    estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
+
+    # 🔹 Asegurarse de que las coordenadas existen y son válidas
+    if estacionamiento.coordenadas:
+        try:
+            lat, lng = map(float, estacionamiento.coordenadas.split(","))
+        except ValueError:
+            lat, lng = -33.4489, -70.6693  # 🔥 Default en Santiago, Chile
+    else:
+        lat, lng = -33.4489, -70.6693  # 🔥 Coordenadas default
+
+    context = {
+        'estacionamiento': estacionamiento,
+        'lat': lat,
+        'lng': lng,
+        'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
+    }
+    return render(request, 'estacionamientos/detalle_estacionamiento.html', context)
+
+    
+@login_required
+def editar_estacionamiento(request, pk):
     """
-    Muestra los detalles de un estacionamiento en particular.
+    Permite al dueño del estacionamiento editar la dirección, tarifa y acceso remoto.
     """
     estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
-    
-    # Asegurémonos de que se envíen las coordenadas
-    coordenadas = estacionamiento.coordenadas.split(',') if estacionamiento.coordenadas else ['-33.4489', '-70.6693']
 
-    return render(request, 'estacionamientos/detalle_estacionamiento.html', {
-        'estacionamiento': estacionamiento,
-        'lat': coordenadas[0],
-        'lng': coordenadas[1],
-        'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
-    })
+    if estacionamiento.owner != request.user:
+        return JsonResponse({"success": False, "error": "No autorizado"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+
+        if "direccion" in data:
+            estacionamiento.ubicacion = data["direccion"]
+        if "tarifa" in data:
+            estacionamiento.tarifa = float(data["tarifa"])
+        if "acceso" in data:
+            estacionamiento.accesoRemoto = data["acceso"] == "True"
+
+        estacionamiento.save()
+
+        return JsonResponse({
+            "success": True,
+            "direccion": estacionamiento.ubicacion,
+            "tarifa": estacionamiento.tarifa,
+            "acceso": estacionamiento.accesoRemoto
+        })
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 # ✅ HABILITAR/DESHABILITAR ESTACIONAMIENTO
 @login_required
-def habilitar_estacionamiento(request, pk):
-    estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
-    if estacionamiento.owner == request.user:
-        estacionamiento.disponibilidad = True
-        estacionamiento.save()
-    return redirect('detalle_estacionamiento', pk=pk)
+def toggle_estacionamiento(request, pk):
+    if request.method == "POST":
+        estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
 
-@login_required
-def deshabilitar_estacionamiento(request, pk):
-    estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
-    if estacionamiento.owner == request.user:
-        estacionamiento.disponibilidad = False
+        if estacionamiento.owner != request.user:
+            return JsonResponse({"success": False, "error": "No tienes permiso para modificar esto."}, status=403)
+
+        estacionamiento.disponibilidad = not estacionamiento.disponibilidad
         estacionamiento.save()
-    return redirect('detalle_estacionamiento', pk=pk)
+
+        return JsonResponse({"success": True, "nuevo_estado": estacionamiento.disponibilidad})
+
+    return JsonResponse({"success": False, "error": "Método no permitido."}, status=400)
+
 
 # 📅 CREAR RESERVA (SOLO CLIENTES)
 @login_required
 @solo_clientes
-def crear_reserva(request, estacionamiento_id):
+def crear_reserva(request, pk):
     """
     Permite a un cliente reservar un estacionamiento si está disponible y la fecha es válida.
     """
-    estacionamiento = get_object_or_404(Estacionamiento, id=estacionamiento_id)
+    estacionamiento = get_object_or_404(Estacionamiento, pk=pk)
 
+    # Verificamos si el estacionamiento está disponible
     if not estacionamiento.disponibilidad:
         messages.error(request, "Este estacionamiento no está disponible para reservas.")
-        return redirect('detalle_estacionamiento', pk=estacionamiento.id)
+        return redirect('detalle_estacionamiento', pk=pk)
 
     if request.method == 'POST':
         form = ReservaForm(request.POST)
@@ -116,6 +165,7 @@ def crear_reserva(request, estacionamiento_id):
             reserva.cliente = request.user
             reserva.estacionamiento = estacionamiento
 
+            # Verificación de solapamiento de reservas
             overlapping = Reserva.objects.filter(
                 estacionamiento=estacionamiento,
                 estado__in=['Pendiente', 'Confirmada']
@@ -123,30 +173,33 @@ def crear_reserva(request, estacionamiento_id):
                 fechaInicio__lt=reserva.fechaFin,
                 fechaFin__gt=reserva.fechaInicio
             )
+
             if overlapping.exists():
                 messages.error(request, "Este estacionamiento ya tiene reservas en ese horario.")
-                return redirect('crear_reserva', estacionamiento_id=estacionamiento.id)
+                return redirect('crear_reserva', pk=pk)
 
             reserva.save()
             messages.success(request, "¡Reserva creada con éxito!")
-            return redirect('detalle_reserva', pk=reserva.pk)
+            return redirect('confirmar_reserva', pk=reserva.pk)
 
     else:
         form = ReservaForm()
 
-    # 🔹 Convertimos coordenadas en variables separadas
+    # Extraer coordenadas
     coordenadas = estacionamiento.coordenadas.split(",") if estacionamiento.coordenadas else ["-33.4489", "-70.6693"]
     lat = float(coordenadas[0])
     lng = float(coordenadas[1])
 
-    return render(request, 'estacionamientos/crear_reserva.html', {
+    context = {
         'form': form,
         'estacionamiento': estacionamiento,
         'tarifa': float(estacionamiento.tarifa) if estacionamiento.tarifa else 0.00,
-        'lat': lat,  # 🔥 Mandamos latitud
-        'lng': lng,  # 🔥 Mandamos longitud
+        'lat': lat,
+        'lng': lng,
         'google_maps_key': settings.GOOGLE_MAPS_API_KEY,
-    })
+    }
+
+    return render(request, 'estacionamientos/crear_reserva.html', context)
 
 
 # 🔍 DETALLE DE RESERVA
@@ -218,18 +271,15 @@ def finalizar_reserva(request, pk):
 
     return redirect('detalle_reserva', pk=pk)
 
-# 📌 MIS RESERVAS (SOLO PARA DUEÑOS)
+# 📌 MIS RESERVAS (SOLO PARA CLIENTES)
 @login_required
 @solo_clientes
 def mis_reservas(request):
     """
     Muestra todas las reservas del cliente actual.
     """
-    reservas = Reserva.objects.filter(cliente=request.user).order_by('-fechaInicio')
-    
-    return render(request, 'estacionamientos/mis_reservas.html', {
-        'reservas': reservas
-    })
+    reservas = Reserva.objects.filter(cliente=request.user).select_related('estacionamiento').order_by('-fechaInicio')
+    return render(request, 'estacionamientos/mis_reservas.html', {'reservas': reservas})
     
 @login_required
 @solo_clientes
@@ -357,14 +407,40 @@ def pagar_reserva(request, reserva_id):
 @login_required
 def reservas_dueno(request):
     """
-    Vista para que un dueño vea todas las reservas de sus estacionamientos.
+    Vista para que un dueño vea todas las reservas de sus estacionamientos con detalles de pago.
     """
-    estacionamientos = Estacionamiento.objects.filter(owner=request.user)
-    reservas = Reserva.objects.filter(estacionamiento__in=estacionamientos).order_by('-fechaInicio')
+    estacionamientos = Estacionamiento.objects.filter(owner=request.user).prefetch_related("reservas")
 
-    return render(request, 'estacionamientos/reservas_dueno.html', {
-        'reservas': reservas
-    })
+    estacionamientos_info = []
+    for estacionamiento in estacionamientos:
+        reservas = Reserva.objects.filter(estacionamiento__owner=request.user).select_related('estacionamiento', 'cliente').order_by('-fechaInicio')
+        if reservas.exists():
+            ultima_reserva = reservas.first()
+            estado_reserva = ultima_reserva.estado
+            pago_pendiente = "Sí" if not ultima_reserva.pagado else "No"
+        else:
+            estado_reserva = "Sin reservas"
+            pago_pendiente = "-"
+
+        estacionamientos_info.append({
+            "estacionamiento": estacionamiento,
+            "estado_reserva": estado_reserva,
+            "pago_pendiente": pago_pendiente,
+            "reservas": reservas,
+        })
+
+    return render(request, "estacionamientos/reservas_dueno.html", {"estacionamientos_info": estacionamientos_info})
+
+@login_required
+@solo_clientes
+def confirmar_reserva(request, pk):
+    """
+    Muestra la confirmación de la reserva antes de proceder al pago.
+    """
+    reserva = get_object_or_404(Reserva, pk=pk)
+    return render(request, 'estacionamientos/confirmar_reserva.html', {'reserva': reserva})
+
+
 
 
 

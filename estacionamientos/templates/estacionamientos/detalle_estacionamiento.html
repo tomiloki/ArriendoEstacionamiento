@@ -1,87 +1,188 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center fw-bold text-success">Detalle del Estacionamiento</h2>
+    <h2 class="text-center fw-bold text-success">🏠 Detalle del Estacionamiento</h2>
 
-    <div class="card mt-3 shadow">
+    <div class="card shadow mt-3">
         <div class="card-body">
-            <h4 class="card-title text-center text-dark">{{ estacionamiento.ubicacion }}</h4>
-            <p class="text-center text-muted">Tipo: {{ estacionamiento.tipo }}</p>
-            
-            <!-- Mapa -->
+            <h4 class="text-dark fw-bold">{{ estacionamiento.ubicacion }}</h4>
+
+            <!-- 🔹 Mapa interactivo -->
             <div id="map" style="width: 100%; height: 400px;" class="mt-3"></div>
 
-            <!-- Información -->
-            <ul class="list-group list-group-flush mt-3">
-                <li class="list-group-item">💰 Tarifa: <strong>${{ estacionamiento.tarifa }} USD/hora</strong></li>
-                <li class="list-group-item">🚦 Estado: 
-                    {% if estacionamiento.disponibilidad %}
-                        <span class="badge bg-success">Disponible</span>
-                    {% else %}
-                        <span class="badge bg-danger">No Disponible</span>
-                    {% endif %}
-                </li>
-                <li class="list-group-item">🔑 Acceso Remoto: 
-                    {% if estacionamiento.accesoRemoto %}
-                        <span class="badge bg-primary">Sí</span>
-                    {% else %}
-                        <span class="badge bg-secondary">No</span>
-                    {% endif %}
-                </li>
-            </ul>
+            <!-- 🔹 Direccion -->
+            <p class="fw-bold">
+                📍 Dirección: 
+                <span id="direccion-text">{{ estacionamiento.ubicacion }}</span>
+                {% if user == estacionamiento.owner %}
+                    <input id="direccion-input" class="form-control d-none" type="text" placeholder="Nueva dirección">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarDireccion()">✏️ Editar</button>
+                {% endif %}
+            </p>
 
-            <!-- Reservar -->
-            {% if estacionamiento.disponibilidad %}
-                <div class="text-center mt-4">
-                    <a href="{% url 'crear_reserva' estacionamiento.id %}" class="btn btn-lg btn-success">
-                        📅 Reservar este Estacionamiento
-                    </a>
-                </div>
+            <!-- 🔹 Tarifa -->
+            <p class="fw-bold">
+                💰 Tarifa: 
+                <span id="tarifa-text">{{ estacionamiento.tarifa }}</span> USD/hora
+                {% if user == estacionamiento.owner %}
+                    <input id="tarifa-input" class="form-control d-none" type="number" step="0.01">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarCampo('tarifa')">✏️ Editar</button>
+                {% endif %}
+            </p>
+
+            <!-- 🔹 Acceso Remoto -->
+            <p class="fw-bold">
+                🔑 Acceso Remoto: 
+                <span id="acceso-text">{{ estacionamiento.accesoRemoto }}</span>
+                {% if user == estacionamiento.owner %}
+                    <select id="acceso-input" class="form-select d-none">
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarCampo('acceso')">✏️ Editar</button>
+                {% endif %}
+            </p>
+
+            <!-- 🔹 Botón de habilitar/deshabilitar SOLO si es dueño -->
+            {% if user == estacionamiento.owner %}
+            <button id="toggle-btn" class="btn btn-{% if estacionamiento.disponibilidad %}warning{% else %}success{% endif %}" 
+                    onclick="toggleDisponibilidad('{{ estacionamiento.id }}')">
+                {% if estacionamiento.disponibilidad %} 🚫 Deshabilitar {% else %} ✅ Habilitar {% endif %}
+            </button>
+    
             {% else %}
-                <p class="text-center text-danger mt-3 fw-bold">Este estacionamiento no está disponible.</p>
+            <a href="{% url 'crear_reserva' estacionamiento.id %}" class="btn btn-success">📅 Reservar Estacionamiento</a>
             {% endif %}
         </div>
     </div>
-
-    <!-- Sección de Reservas -->
-    <div class="mt-5">
-        <h4 class="text-center text-dark">📅 Reservas Actuales</h4>
-        {% if reservas %}
-            <ul class="list-group mt-3">
-                {% for reserva in reservas %}
-                    <li class="list-group-item">
-                        🕒 Desde: {{ reserva.fechaInicio }} → Hasta: {{ reserva.fechaFin }}
-                        <span class="badge bg-warning">{{ reserva.estado }}</span>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="text-center text-muted">No hay reservas en este estacionamiento.</p>
-        {% endif %}
-    </div>
 </div>
 
-<!-- Script de Google Maps -->
+<!-- 🔹 Scripts -->
 <script>
-    function initMap() {
-        var estacionamiento = {
-            lat: parseFloat("{{ lat|default:-33.4489 }}"),  // Santiago por defecto
-            lng: parseFloat("{{ lng|default:-70.6693 }}")
-        };
+    let map;
+    let marker;
+    let geocoder;
+    let direccionInput = document.getElementById("direccion-input");
 
-        var map = new google.maps.Map(document.getElementById('map'), {
+    function initMap() {
+        let lat = parseFloat("{{ lat }}");
+        let lng = parseFloat("{{ lng }}");
+
+        if (isNaN(lat) || isNaN(lng)) {
+            console.error("Error: Coordenadas inválidas");
+            return;
+        }
+
+        let estacionamiento = { lat: lat, lng: lng };
+
+        map = new google.maps.Map(document.getElementById('map'), {
             center: estacionamiento,
-            zoom: 15
+            zoom: 15,
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false
         });
 
-        var marker = new google.maps.Marker({
+        marker = new google.maps.Marker({
             position: estacionamiento,
             map: map,
-            title: "{{ estacionamiento.ubicacion }}"
+            title: "{{ estacionamiento.ubicacion }}",
+            draggable: true
         });
+
+        geocoder = new google.maps.Geocoder();
+
+        marker.addListener("dragend", function () {
+            geocoder.geocode({ location: marker.getPosition() }, function (results, status) {
+                if (status === "OK") {
+                    if (results[0]) {
+                        direccionInput.value = results[0].formatted_address;
+                    }
+                }
+            });
+        });
+
+        let autocomplete = new google.maps.places.Autocomplete(direccionInput);
+        autocomplete.addListener("place_changed", function () {
+            let place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            map.setCenter(place.geometry.location);
+            marker.setPosition(place.geometry.location);
+        });
+    }
+
+    function editarDireccion() {
+        document.getElementById("direccion-text").classList.add("d-none");
+        direccionInput.classList.remove("d-none");
+        direccionInput.focus();
+
+        direccionInput.addEventListener("blur", function () {
+            guardarCambios("direccion", direccionInput.value);
+        });
+    }
+
+    function editarCampo(campo) {
+        let span = document.getElementById(campo + "-text");
+        let input = document.getElementById(campo + "-input");
+
+        span.classList.add("d-none");
+        input.classList.remove("d-none");
+        input.focus();
+
+        input.addEventListener("blur", function () {
+            guardarCambios(campo, input.value);
+        });
+    }
+
+    function guardarCambios(campo, valor) {
+        fetch("{% url 'editar_estacionamiento' estacionamiento.id %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ [campo]: valor })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(campo + "-text").innerText = valor;
+                document.getElementById(campo + "-text").classList.remove("d-none");
+                document.getElementById(campo + "-input").classList.add("d-none");
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error en la solicitud:", error));
+    }
+
+    function toggleDisponibilidad(id) {
+        fetch(`/estacionamientos/toggle/${id}/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let btn = document.getElementById("toggle-btn");
+                btn.classList.toggle("btn-warning", data.disponible);
+                btn.classList.toggle("btn-success", !data.disponible);
+                btn.innerText = data.disponible ? "🚫 Deshabilitar" : "✅ Habilitar";
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error en la solicitud:", error));
     }
 </script>
 
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&libraries=places&callback=initMap"></script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&callback=initMap" async defer></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_key }}&libraries=places&callback=initMap" async defer></script>
 {% endblock %}

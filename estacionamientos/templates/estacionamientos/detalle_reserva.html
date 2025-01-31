@@ -1,3 +1,25 @@
-{% if reserva.estado == "Pagada" %}
-    <a href="{% url 'generar_recibo' reserva.id %}" class="btn btn-primary btn-sm">📄 Descargar Recibo</a>
-{% endif %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-success text-center fw-bold">
+        ✅ ¡Reserva confirmada con éxito!
+    </div>
+
+    <div class="card shadow mt-3">
+        <div class="card-body">
+            <h4 class="text-center text-dark">{{ reserva.estacionamiento.ubicacion }}</h4>
+            <p class="text-muted text-center">🕒 {{ reserva.fechaInicio }} → {{ reserva.fechaFin }}</p>
+            
+            {% if reserva.estado == "Pendiente" %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'iniciar_pago' reserva.id %}" class="btn btn-lg btn-primary">💳 Proceder al Pago</a>
+                </div>
+            {% elif reserva.estado == "Pagada" %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'generar_recibo' reserva.id %}" class="btn btn-lg btn-success">📄 Descargar Recibo</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

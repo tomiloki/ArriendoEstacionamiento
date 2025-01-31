@@ -15,10 +15,11 @@
                             {% elif reserva.estado == 'Confirmada' %} bg-primary 
                             {% elif reserva.estado == 'Finalizada' %} bg-success 
                             {% elif reserva.estado == 'Cancelada' %} bg-danger 
-                            {% endif %}">
+                            {% endif %} fw-bold">
                             {{ reserva.estado }}
                         </span>
                     </div>
+                    
                     <div>
                         {% if reserva.estado == 'Pendiente' %}
                             <a href="{% url 'cancelar_reserva' reserva.id %}" class="btn btn-sm btn-danger">❌ Cancelar</a>

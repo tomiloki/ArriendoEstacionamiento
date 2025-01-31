@@ -10,68 +10,76 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow">
+    
+    <nav class="navbar navbar-expand-lg shadow" style="background-color: #78c2ad;">
         <div class="container">
-            <a class="navbar-brand fs-3" href="{% url 'home' %}">
-                🚗 Mi Estacionamiento
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand fw-bold text-white" href="{% url 'home' %}">Mi Estacionamiento</a>
+            
+            <!-- Botón para móvil -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    
+            <!-- Menú principal -->
+            <div class="collapse navbar-collapse" id="navbarNav">
                 {% if user.is_authenticated %}
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <!-- Opciones según rol -->
-                    {% if user.rol == 'cliente' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'listar_estacionamientos' %}">🔍 Ver Estacionamientos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'mis_reservas' %}">📅 Mis Reservas</a>
-                        </li>
-                    {% elif user.rol == 'dueno' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'crear_estacionamiento' %}">➕ Agregar Estacionamiento</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'reservas_dueno' %}">📋 Reservas de mis Estacionamientos</a>
-                        </li>   
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'reporte_transacciones' %}">💰 Transacciones</a>
-                        </li>         
-                    {% elif user.rol == 'administrador' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'administracion_usuarios' %}">⚙️ Administración</a>
-                        </li>
-                    {% elif user.rol == 'consultor' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'listar_estacionamientos' %}">📊 Consultar Estacionamientos</a>
-                        </li>
-                    {% endif %}
-                </ul>
-                
-                <!-- Botón de Logout -->
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button class="btn btn-outline-light" type="submit">Cerrar Sesión</button>
-                </form>
+                    <ul class="navbar-nav me-auto">
+                        <!-- 🔹 CLIENTE -->
+                        {% if user.rol == 'cliente' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'listar_estacionamientos' %}">🔍 Ver Estacionamientos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'mis_reservas' %}">📅 Mis Reservas</a>
+                            </li>
+    
+                        <!-- 🔹 DUEÑO -->
+                        {% elif user.rol == 'dueno' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'listar_estacionamientos_dueno' %}">📋 Mis Estacionamientos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'reservas_dueno' %}">📂 Reservas Recibidas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'reporte_transacciones' %}">💰 Transacciones</a>
+                            </li>
+    
+                        <!-- 🔹 ADMINISTRADOR -->
+                        {% elif user.rol == 'administrador' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'administracion_usuarios' %}">⚙️ Administración</a>
+                            </li>
+    
+                        <!-- 🔹 CONSULTOR -->
+                        {% elif user.rol == 'consultor' %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{% url 'listar_estacionamientos' %}">📊 Consultar Estacionamientos</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+    
+                    <!-- 🔹 Botón de Cerrar Sesión -->
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-light fw-bold text-green" type="submit">Cerrar Sesión</button>
+                    </form>
                 
                 {% else %}
-                <!-- Usuario no autenticado -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">✍️ Registrarse</a>
-                    </li>
-                </ul>
-                <form method="get" action="{% url 'login' %}">
-                    <button class="btn btn-outline-light" type="submit">🔑 Iniciar Sesión</button>
-                </form>
+                    <!-- 🔹 Opciones para usuarios NO autenticados -->
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'register' %}">✍️ Registrarse</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light fw-bold" href="{% url 'login' %}">🔑 Iniciar Sesión</a>
+                        </li>
+                    </ul>
                 {% endif %}
             </div>
         </div>
     </nav>
+    
 
     <!-- Contenido Principal -->
     <div class="container mt-4">

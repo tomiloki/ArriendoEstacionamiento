@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="fw-bold text-success">📍 Mis Estacionamientos</h2>
+        <a href="{% url 'crear_estacionamiento' %}" class="btn btn-success">➕ Crear Estacionamiento</a>
+    </div>
+
+    {% if estacionamientos %}
+    <ul class="list-group mt-3 shadow-sm">
+        {% for estacionamiento in estacionamientos %}
+            <li class="list-group-item d-flex justify-content-between align-items-center position-relative">
+                <div>
+                    <h5 class="fw-bold">{{ estacionamiento.ubicacion }}</h5>
+                    <p class="mb-0 text-muted">💰 Tarifa: ${{ estacionamiento.tarifa }} USD/hora</p>
+                    <p class="mb-0">
+                        🔑 Estado:
+                        <span class="badge {% if estacionamiento.disponibilidad %} bg-success {% else %} bg-danger {% endif %}">
+                            {% if estacionamiento.disponibilidad %} Habilitado {% else %} Deshabilitado {% endif %}
+                        </span>
+                    </p>
+                </div>
+    
+                <div class="d-flex gap-2">
+                    <!-- 🔹 Botón "Ver Detalle" -->
+                    <a href="{% url 'detalle_estacionamiento' estacionamiento.id %}" class="btn btn-custom">
+                        Ver Detalle
+                    </a>
+    
+                    <!-- 🔹 Botón de Habilitar/Deshabilitar -->
+                    <button class="btn {% if estacionamiento.disponibilidad %} btn-warning {% else %} btn-success {% endif %} toggle-btn"
+                            data-id="{{ estacionamiento.id }}">
+                        {% if estacionamiento.disponibilidad %} Deshabilitar {% else %} Habilitar {% endif %}
+                    </button>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+    
+    {% else %}
+        <p class="text-center text-muted mt-3">No tienes estacionamientos registrados.</p>
+    {% endif %}
+</div>
+
+<!-- Script para actualizar estado sin recargar la página -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".toggle-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                let estacionamientoId = this.getAttribute("data-id");
+                let boton = this;
+                let estadoTexto = boton.parentElement.querySelector(".estado-texto");
+
+                fetch(`/estacionamientos/toggle/${estacionamientoId}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.estado) {
+                            boton.classList.remove("btn-success");
+                            boton.classList.add("btn-warning");
+                            boton.textContent = "Deshabilitar";
+                            estadoTexto.textContent = "Habilitado";
+                            estadoTexto.classList.remove("bg-danger");
+                            estadoTexto.classList.add("bg-success");
+                        } else {
+                            boton.classList.remove("btn-warning");
+                            boton.classList.add("btn-success");
+                            boton.textContent = "Habilitar";
+                            estadoTexto.textContent = "Deshabilitado";
+                            estadoTexto.classList.remove("bg-success");
+                            estadoTexto.classList.add("bg-danger");
+                        }
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error en la solicitud:", error);
+                });
+            });
+        });
+    });
+</script>
+
+
+{% endblock %}

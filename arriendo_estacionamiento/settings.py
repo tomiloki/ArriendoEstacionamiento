@@ -27,6 +27,13 @@ GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
 ALLOWED_HOSTS = []
 
 
+# Configuración de Webpay
+WEBPAY_API_KEY = "TU_API_KEY"
+WEBPAY_COMMERCE_CODE = "597055555532"
+WEBPAY_ENV = "TEST"  # Cambiar a "PROD" en producción
+
+
+
 # Application definition
 
 INSTALLED_APPS = [
